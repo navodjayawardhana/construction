@@ -19,6 +19,7 @@ $expectedToken = '';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
+        $line = trim($line);
         if (strpos($line, 'DEPLOY_TOKEN=') === 0) {
             $expectedToken = trim(substr($line, strlen('DEPLOY_TOKEN=')));
             break;
