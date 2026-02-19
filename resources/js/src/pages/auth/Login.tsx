@@ -36,12 +36,16 @@ const Login = () => {
         <div className="flex min-h-screen items-center justify-center bg-[url('/assets/images/map.svg')] bg-cover bg-center dark:bg-[url('/assets/images/map-dark.svg')]">
             <div className="panel m-6 w-full max-w-lg sm:w-[480px]">
                 <div className="flex flex-col items-center mb-10">
-                    <div className="w-16 h-16 bg-construction rounded-xl flex items-center justify-center mb-4">
-                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                    </div>
-                    <h2 className="text-2xl font-bold text-construction">Construction Manager</h2>
+                    {settings.business_logo ? (
+                        <img src={`/storage/${settings.business_logo}`} alt={settings.business_name} className="w-20 h-20 object-contain mb-4" />
+                    ) : (
+                        <div className="w-16 h-16 bg-construction rounded-xl flex items-center justify-center mb-4">
+                            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                        </div>
+                    )}
+                    <h2 className="text-2xl font-bold text-construction">{settings.business_name || 'Construction Manager'}</h2>
                     <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
                 </div>
                 <form className="space-y-5" onSubmit={handleSubmit}>
