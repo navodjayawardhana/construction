@@ -6,9 +6,15 @@
  * Protected by a secret token
  */
 
-// Verify secret token
+// Bootstrap Laravel first
+require __DIR__ . '/../vendor/autoload.php';
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel->bootstrap();
+
+// Verify secret token after bootstrap
 $token = $_GET['token'] ?? '';
-$expectedToken = env('DEPLOY_TOKEN', '');
+$expectedToken = config('app.deploy_token', env('DEPLOY_TOKEN', ''));
 
 if (empty($expectedToken) || $token !== $expectedToken) {
     http_response_code(403);
@@ -16,25 +22,21 @@ if (empty($expectedToken) || $token !== $expectedToken) {
     exit;
 }
 
-// Bootstrap Laravel
-require __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
+header('Content-Type: application/json');
 
-// Run migrations
 try {
+    // Run migrations
     $exitCode = Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
     $output = Illuminate\Support\Facades\Artisan::output();
 
-    // Clear caches
+    // Clear and rebuild caches
     Illuminate\Support\Facades\Artisan::call('config:cache');
     Illuminate\Support\Facades\Artisan::call('route:cache');
     Illuminate\Support\Facades\Artisan::call('view:cache');
 
     echo json_encode([
         'success' => $exitCode === 0,
-        'migration_output' => $output,
+        'migration_output' => trim($output),
         'message' => 'Migrations and cache clearing completed'
     ], JSON_PRETTY_PRINT);
 } catch (Exception $e) {
