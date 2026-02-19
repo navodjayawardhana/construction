@@ -29,6 +29,10 @@ try {
     $exitCode = Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
     $output = Illuminate\Support\Facades\Artisan::output();
 
+    // Create storage symlink
+    Illuminate\Support\Facades\Artisan::call('storage:link', ['--force' => true]);
+    $storageOutput = Illuminate\Support\Facades\Artisan::output();
+
     // Clear and rebuild caches
     Illuminate\Support\Facades\Artisan::call('config:cache');
     Illuminate\Support\Facades\Artisan::call('route:cache');
@@ -37,7 +41,8 @@ try {
     echo json_encode([
         'success' => $exitCode === 0,
         'migration_output' => trim($output),
-        'message' => 'Migrations and cache clearing completed'
+        'storage_link' => trim($storageOutput),
+        'message' => 'Migrations, storage link and cache clearing completed'
     ], JSON_PRETTY_PRINT);
 } catch (Exception $e) {
     http_response_code(500);
