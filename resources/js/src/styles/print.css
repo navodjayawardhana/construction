@@ -1,0 +1,140 @@
+@media print {
+    /* Hide everything except print content */
+    body * {
+        visibility: hidden;
+    }
+
+    .print-content,
+    .print-content * {
+        visibility: visible !important;
+    }
+
+    .print-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+
+    /* Hide sidebar, nav, buttons */
+    .sidebar,
+    nav,
+    .no-print,
+    button,
+    .btn {
+        display: none !important;
+    }
+
+    /* A4 styling */
+    .print-content {
+        font-family: 'Segoe UI', Arial, sans-serif !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        color: #000 !important;
+        background: #fff !important;
+        width: 210mm !important;
+        max-width: 210mm !important;
+        margin: 0 auto !important;
+        padding: 15mm 20mm !important;
+    }
+
+    .print-content *:not(.invoice-watermark *) {
+        color: #000 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    .print-content table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+    }
+
+    .print-content th,
+    .print-content td {
+        border: 1px solid #333 !important;
+        padding: 6px 10px !important;
+        text-align: left !important;
+        font-size: 11px !important;
+    }
+
+    .print-content th {
+        font-weight: bold !important;
+        background-color: #f0f0f0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .print-content .print-header {
+        text-align: center !important;
+        margin-bottom: 20px !important;
+    }
+
+    .print-content .print-footer {
+        text-align: center !important;
+        margin-top: 30px !important;
+        font-size: 10px !important;
+    }
+
+    .print-content .text-right {
+        text-align: right !important;
+    }
+
+    /* No page breaks inside tables */
+    .print-content table {
+        page-break-inside: auto !important;
+    }
+
+    .print-content tr {
+        page-break-inside: avoid !important;
+    }
+
+    /* Hide SVGs in print */
+    .print-content svg:not(.watermark-svg) {
+        display: none !important;
+    }
+
+    /* Watermark stamp visible in print */
+    .invoice-watermark {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        visibility: visible !important;
+    }
+
+    .invoice-watermark * {
+        visibility: visible !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .invoice-watermark .text-green-600 {
+        color: #16a34a !important;
+        border-color: #16a34a !important;
+    }
+
+    .invoice-watermark .border-green-600 {
+        border-color: #16a34a !important;
+    }
+
+    .invoice-watermark .text-red-500 {
+        color: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+
+    .invoice-watermark .border-red-500 {
+        border-color: #ef4444 !important;
+    }
+
+    .invoice-watermark .text-blue-600 {
+        color: #2563eb !important;
+        border-color: #2563eb !important;
+    }
+
+    .invoice-watermark .border-blue-600 {
+        border-color: #2563eb !important;
+    }
+
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+}
