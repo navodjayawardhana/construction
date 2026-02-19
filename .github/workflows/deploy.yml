@@ -92,31 +92,25 @@ jobs:
             **/phpunit.xml
             **/.phpunit.cache/**
 
-      # ── Run Migrations via SSH ──
+      # ── Run Migrations via HTTP Webhook ──
       - name: Run migrations on nau.rfrma.com
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 21098
-          script: |
-            cd ~/nau.rfrma.com
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+        run: |
+          response=$(curl -s -w "\n%{http_code}" "https://nau.rfrma.com/deploy-migrate.php?token=${{ secrets.DEPLOY_TOKEN }}")
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+          echo "$body"
+          if [ "$http_code" != "200" ]; then
+            echo "Migration failed with HTTP $http_code"
+            exit 1
+          fi
 
       - name: Run migrations on sadun.rfrma.com
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: 21098
-          script: |
-            cd ~/sadun.rfrma.com
-            php artisan migrate --force
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+        run: |
+          response=$(curl -s -w "\n%{http_code}" "https://sadun.rfrma.com/deploy-migrate.php?token=${{ secrets.DEPLOY_TOKEN }}")
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+          echo "$body"
+          if [ "$http_code" != "200" ]; then
+            echo "Migration failed with HTTP $http_code"
+            exit 1
+          fi
