@@ -99,6 +99,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
+          port: 21098
           script: |
             cd ~/nau.rfrma.com
             php artisan migrate --force
@@ -112,6 +113,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
+          port: 21098
           script: |
             cd ~/sadun.rfrma.com
             php artisan migrate --force
