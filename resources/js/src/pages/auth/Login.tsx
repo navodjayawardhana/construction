@@ -37,7 +37,7 @@ const Login = () => {
             <div className="panel m-6 w-full max-w-lg sm:w-[480px]">
                 <div className="flex flex-col items-center mb-10">
                     {settings.business_logo ? (
-                        <img src={`/storage/${settings.business_logo}`} alt={settings.business_name} className="w-20 h-20 object-contain mb-4" />
+                        <img src={settings.business_logo} alt={settings.business_name} className="w-20 h-20 object-contain mb-4" />
                     ) : (
                         <div className="w-16 h-16 bg-construction rounded-xl flex items-center justify-center mb-4">
                             <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
