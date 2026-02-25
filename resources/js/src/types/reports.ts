@@ -1,4 +1,4 @@
-import { JcbJob, LorryJob, Payment, Worker, Client } from './index';
+import { Job, Payment, Worker, Client } from './index';
 
 export interface PaginatedResponse<T> {
     data: T[];
@@ -9,8 +9,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ClientStatementData {
-    jcb_jobs: PaginatedResponse<JcbJob>;
-    lorry_jobs: PaginatedResponse<LorryJob>;
+    jobs: PaginatedResponse<Job>;
     payments: PaginatedResponse<Payment>;
     summary: {
         total_jcb_amount: number;
@@ -41,8 +40,7 @@ export interface MonthlyRevenueExpenseData {
 }
 
 export interface VehicleReportData {
-    jcb_jobs: PaginatedResponse<JcbJob>;
-    lorry_jobs: PaginatedResponse<LorryJob>;
+    jobs: PaginatedResponse<Job>;
     expenses: PaginatedResponse<{
         id: string;
         vehicle_id: string;
@@ -63,8 +61,7 @@ export interface VehicleReportData {
 
 export interface DailyJobSummaryItem {
     date: string;
-    jcb_jobs: JcbJob[];
-    lorry_jobs: LorryJob[];
+    jobs: Job[];
     jcb_total: number;
     lorry_total: number;
     daily_total: number;
@@ -85,8 +82,7 @@ export interface DailyJobSummaryData {
 
 export interface CombinedInvoiceData {
     client: Client;
-    jcb_jobs: JcbJob[];
-    lorry_jobs: LorryJob[];
+    jobs: Job[];
     total_jcb: number;
     total_lorry: number;
     grand_total: number;

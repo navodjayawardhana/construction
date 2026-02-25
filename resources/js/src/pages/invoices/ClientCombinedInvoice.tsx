@@ -143,80 +143,41 @@ const ClientCombinedInvoice = () => {
                         {data.client.phone && <p className="text-sm text-gray-600">Tel: {data.client.phone}</p>}
                     </div>
 
-                    {/* JCB Jobs */}
-                    {data.jcb_jobs.length > 0 && (
+                    {/* All Jobs */}
+                    {data.jobs.length > 0 && (
                         <div className="mb-6">
-                            <h3 className="font-bold text-sm uppercase text-gray-600 mb-2">JCB Jobs</h3>
+                            <h3 className="font-bold text-sm uppercase text-gray-600 mb-2">Jobs</h3>
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-gray-100">
                                         <th className="border border-gray-300 px-3 py-2 text-left text-xs">#</th>
                                         <th className="border border-gray-300 px-3 py-2 text-left text-xs">Date</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Vehicle</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Location</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-right text-xs">Hours</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-right text-xs">Rate</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-right text-xs">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.jcb_jobs.map((job, i) => (
-                                        <tr key={job.id}>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs">{i + 1}</td>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs">{formatDate(job.job_date)}</td>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs">{job.vehicle?.name || '-'}</td>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs">{job.location || '-'}</td>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs text-right">{Number(job.total_hours).toFixed(2)}</td>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs text-right">{formatCurrency(job.rate_amount)}</td>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs text-right font-semibold">{formatCurrency(job.total_amount)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="bg-gray-50 font-bold">
-                                        <td colSpan={6} className="border border-gray-300 px-3 py-2 text-xs text-right">JCB Subtotal:</td>
-                                        <td className="border border-gray-300 px-3 py-2 text-xs text-right">{formatCurrency(data.total_jcb)}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    )}
-
-                    {/* Lorry Jobs */}
-                    {data.lorry_jobs.length > 0 && (
-                        <div className="mb-6">
-                            <h3 className="font-bold text-sm uppercase text-gray-600 mb-2">Lorry Jobs</h3>
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="bg-gray-100">
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">#</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Date</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Vehicle</th>
-                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Location</th>
                                         <th className="border border-gray-300 px-3 py-2 text-left text-xs">Type</th>
+                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Vehicle</th>
+                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Location</th>
+                                        <th className="border border-gray-300 px-3 py-2 text-left text-xs">Details</th>
                                         <th className="border border-gray-300 px-3 py-2 text-right text-xs">Rate</th>
                                         <th className="border border-gray-300 px-3 py-2 text-right text-xs">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {data.lorry_jobs.map((job, i) => (
+                                    {data.jobs.map((job: any, i: number) => (
                                         <tr key={job.id}>
                                             <td className="border border-gray-300 px-3 py-1.5 text-xs">{i + 1}</td>
                                             <td className="border border-gray-300 px-3 py-1.5 text-xs">{formatDate(job.job_date)}</td>
+                                            <td className="border border-gray-300 px-3 py-1.5 text-xs uppercase font-bold">{job.job_type}</td>
                                             <td className="border border-gray-300 px-3 py-1.5 text-xs">{job.vehicle?.name || '-'}</td>
                                             <td className="border border-gray-300 px-3 py-1.5 text-xs">{job.location || '-'}</td>
-                                            <td className="border border-gray-300 px-3 py-1.5 text-xs">{getRateTypeLabel(job.rate_type)}</td>
+                                            <td className="border border-gray-300 px-3 py-1.5 text-xs">
+                                                {job.job_type === 'jcb'
+                                                    ? `${Number(job.total_hours || 0).toFixed(2)}h`
+                                                    : getRateTypeLabel(job.rate_type)}
+                                            </td>
                                             <td className="border border-gray-300 px-3 py-1.5 text-xs text-right">{formatCurrency(job.rate_amount)}</td>
                                             <td className="border border-gray-300 px-3 py-1.5 text-xs text-right font-semibold">{formatCurrency(job.total_amount)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
-                                <tfoot>
-                                    <tr className="bg-gray-50 font-bold">
-                                        <td colSpan={6} className="border border-gray-300 px-3 py-2 text-xs text-right">Lorry Subtotal:</td>
-                                        <td className="border border-gray-300 px-3 py-2 text-xs text-right">{formatCurrency(data.total_lorry)}</td>
-                                    </tr>
-                                </tfoot>
                             </table>
                         </div>
                     )}
@@ -224,13 +185,13 @@ const ClientCombinedInvoice = () => {
                     {/* Grand Total */}
                     <div className="flex justify-end mb-8">
                         <div className="w-72 border-t-2 border-gray-800">
-                            {data.jcb_jobs.length > 0 && (
+                            {data.total_jcb > 0 && (
                                 <div className="flex justify-between py-1 text-sm">
                                     <span>JCB Total:</span>
                                     <span>{formatCurrency(data.total_jcb)}</span>
                                 </div>
                             )}
-                            {data.lorry_jobs.length > 0 && (
+                            {data.total_lorry > 0 && (
                                 <div className="flex justify-between py-1 text-sm">
                                     <span>Lorry Total:</span>
                                     <span>{formatCurrency(data.total_lorry)}</span>

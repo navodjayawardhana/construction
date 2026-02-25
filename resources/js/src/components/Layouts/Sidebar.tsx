@@ -112,26 +112,26 @@ const Sidebar = () => {
                                 </NavLink>
                             </li>
 
-                            {/* JCB Jobs */}
+                            {/* Jobs */}
                             <li className="nav-item">
-                                <NavLink to="/jcb-jobs" className="group">
+                                <NavLink to="/jobs" className="group">
                                     <div className="flex items-center">
                                         <svg className="group-hover:!text-construction shrink-0" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M2 16H22M2 16V20H22V16M2 16L4 4H20L22 16M7 20V22M17 20V22M6 8H18M7 12H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">JCB Jobs</span>
+                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Jobs</span>
                                     </div>
                                 </NavLink>
                             </li>
 
-                            {/* Lorry Jobs */}
+                            {/* Monthly Vehicle Bill */}
                             <li className="nav-item">
-                                <NavLink to="/lorry-jobs" className="group">
+                                <NavLink to="/invoices/monthly-vehicle-bill" className="group">
                                     <div className="flex items-center">
                                         <svg className="group-hover:!text-construction shrink-0" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M1 14H15V4H9L1 14ZM1 14V18H3M15 18H7M15 4H19L23 10V18H21M3 18C3 19.1046 3.89543 20 5 20C6.10457 20 7 19.1046 7 18M3 18C3 16.8954 3.89543 16 5 16C6.10457 16 7 16.8954 7 18M21 18C21 19.1046 20.1046 20 19 20C17.8954 20 17 19.1046 17 18C17 16.8954 17.8954 16 19 16C20.1046 16 21 16.8954 21 18ZM15 10H20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                         </svg>
-                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Lorry Jobs</span>
+                                        <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Monthly Job</span>
                                     </div>
                                 </NavLink>
                             </li>
@@ -220,6 +220,7 @@ const Sidebar = () => {
                                     </ul>
                                 </AnimateHeight>
                             </li>
+
 
                             {/* Paysheets */}
                             <li className="nav-item">

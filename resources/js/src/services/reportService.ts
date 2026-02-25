@@ -9,15 +9,14 @@ import {
     PayslipData,
     MonthlyPaysheetData,
 } from '../types/reports';
-import { JcbJob, LorryJob } from '../types';
+import { Job } from '../types';
 
 // Reports
 export const getClientStatement = (params: {
     client_id: string;
     date_from: string;
     date_to: string;
-    jcb_page?: number;
-    lorry_page?: number;
+    job_page?: number;
     payment_page?: number;
 }): Promise<AxiosResponse<ClientStatementData>> => {
     return api.get('/reports/client-statement', { params });
@@ -34,8 +33,7 @@ export const getVehicleReport = (params: {
     vehicle_id: string;
     date_from: string;
     date_to: string;
-    jcb_page?: number;
-    lorry_page?: number;
+    job_page?: number;
     expense_page?: number;
 }): Promise<AxiosResponse<VehicleReportData>> => {
     return api.get('/reports/vehicle', { params });
@@ -104,12 +102,8 @@ export const exportMonthlyRevenueExpense = (params: {
 };
 
 // Invoices
-export const getJcbJobInvoice = (id: string): Promise<AxiosResponse<JcbJob>> => {
-    return api.get(`/invoices/jcb-job/${id}`);
-};
-
-export const getLorryJobInvoice = (id: string): Promise<AxiosResponse<LorryJob>> => {
-    return api.get(`/invoices/lorry-job/${id}`);
+export const getJobInvoice = (id: string): Promise<AxiosResponse<Job>> => {
+    return api.get(`/invoices/job/${id}`);
 };
 
 export const getClientCombinedInvoice = (params: {

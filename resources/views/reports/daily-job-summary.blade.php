@@ -46,25 +46,14 @@
         </thead>
         <tbody>
             @foreach($dailySummary as $day)
-                @foreach($day['jcb_jobs'] as $job)
+                @foreach($day['jobs'] as $job)
                 <tr>
                     <td>{{ \Carbon\Carbon::parse($day['date'])->format('d M Y') }}</td>
-                    <td>JCB</td>
+                    <td>{{ strtoupper($job->job_type) }}</td>
                     <td>{{ $job->vehicle->name ?? '-' }}</td>
                     <td>{{ $job->client->name ?? '-' }}</td>
                     <td>{{ $job->location ?? '-' }}</td>
-                    <td>{{ $job->total_hours }} hrs</td>
-                    <td class="text-right">Rs. {{ number_format($job->total_amount, 2) }}</td>
-                </tr>
-                @endforeach
-                @foreach($day['lorry_jobs'] as $job)
-                <tr>
-                    <td>{{ \Carbon\Carbon::parse($day['date'])->format('d M Y') }}</td>
-                    <td>Lorry</td>
-                    <td>{{ $job->vehicle->name ?? '-' }}</td>
-                    <td>{{ $job->client->name ?? '-' }}</td>
-                    <td>{{ $job->location ?? '-' }}</td>
-                    <td>{{ ucfirst(str_replace('_', ' ', $job->rate_type)) }}</td>
+                    <td>{{ $job->job_type === 'jcb' ? $job->total_hours . ' hrs' : ucfirst(str_replace('_', ' ', $job->rate_type)) }}</td>
                     <td class="text-right">Rs. {{ number_format($job->total_amount, 2) }}</td>
                 </tr>
                 @endforeach

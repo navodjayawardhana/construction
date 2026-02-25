@@ -6,12 +6,12 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ClientController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\WorkerController;
-use App\Http\Controllers\Api\JcbJobController;
-use App\Http\Controllers\Api\LorryJobController;
+use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\VehicleExpenseController;
 use App\Http\Controllers\Api\WorkerAttendanceController;
 use App\Http\Controllers\Api\SalaryPaymentController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\MonthlyVehicleBillController;
 use App\Http\Controllers\Api\SettingController;
 
 // Public routes
@@ -37,19 +37,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // Workers
     Route::apiResource('workers', WorkerController::class);
 
-    // JCB Jobs
-    Route::post('/jcb-jobs/bulk', [JcbJobController::class, 'bulkStore']);
-    Route::patch('/jcb-jobs/{id}/complete', [JcbJobController::class, 'markCompleted']);
-    Route::patch('/jcb-jobs/{id}/paid', [JcbJobController::class, 'markPaid']);
-    Route::apiResource('jcb-jobs', JcbJobController::class);
-
-    // Lorry Jobs
-    Route::post('/lorry-jobs/bulk', [LorryJobController::class, 'bulkStore']);
-    Route::patch('/lorry-jobs/{id}/complete', [LorryJobController::class, 'markCompleted']);
-    Route::patch('/lorry-jobs/{id}/paid', [LorryJobController::class, 'markPaid']);
-    Route::apiResource('lorry-jobs', LorryJobController::class);
+    // Jobs (unified JCB + Lorry)
+    Route::post('/jobs/bulk', [JobController::class, 'bulkStore']);
+    Route::patch('/jobs/{id}/complete', [JobController::class, 'markCompleted']);
+    Route::patch('/jobs/{id}/paid', [JobController::class, 'markPaid']);
+    Route::apiResource('jobs', JobController::class);
 
     // Vehicle Expenses
+    Route::get('vehicle-expenses/vehicle-summary', [VehicleExpenseController::class, 'vehicleSummary']);
+    Route::get('vehicle-expenses/summary', [VehicleExpenseController::class, 'summary']);
     Route::apiResource('vehicle-expenses', VehicleExpenseController::class);
 
     // Worker Attendances
@@ -72,9 +68,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/daily-job-summary/export', [ReportController::class, 'exportDailyJobSummary']);
     Route::get('/reports/monthly-revenue-expense/export', [ReportController::class, 'exportMonthlyRevenueExpense']);
 
+    // Monthly Vehicle Bills
+    Route::apiResource('monthly-vehicle-bills', MonthlyVehicleBillController::class);
+
     // Invoices
-    Route::get('/invoices/jcb-job/{id}', [ReportController::class, 'jcbJobInvoice']);
-    Route::get('/invoices/lorry-job/{id}', [ReportController::class, 'lorryJobInvoice']);
+    Route::get('/invoices/job/{id}', [ReportController::class, 'jobInvoice']);
     Route::get('/invoices/client-combined', [ReportController::class, 'clientCombinedInvoice']);
 
     // Paysheets

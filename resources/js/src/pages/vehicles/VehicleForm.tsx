@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Vehicle } from '../../types';
+import { Vehicle, Worker } from '../../types';
 import { getVehicle, createVehicle, updateVehicle } from '../../services/vehicleService';
+import { getWorkers } from '../../services/workerService';
 import PageHeader from '../../components/shared/PageHeader';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 
@@ -13,6 +14,8 @@ const VehicleForm = () => {
 
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [allWorkers, setAllWorkers] = useState<Worker[]>([]);
+    const [selectedWorkerIds, setSelectedWorkerIds] = useState<string[]>([]);
     const [formData, setFormData] = useState({
         name: '',
         registration_number: '',
@@ -25,10 +28,20 @@ const VehicleForm = () => {
     });
 
     useEffect(() => {
+        fetchWorkers();
         if (isEdit && id) {
             fetchVehicle();
         }
     }, [id]);
+
+    const fetchWorkers = async () => {
+        try {
+            const response = await getWorkers({ per_page: 200, is_active: 1 } as any);
+            setAllWorkers(response.data.data as unknown as Worker[]);
+        } catch {
+            // silently fail
+        }
+    };
 
     const fetchVehicle = async () => {
         setLoading(true);
@@ -45,6 +58,9 @@ const VehicleForm = () => {
                 model: vehicle.model || '',
                 year: vehicle.year ? String(vehicle.year) : '',
             });
+            if (vehicle.workers) {
+                setSelectedWorkerIds(vehicle.workers.map((w: any) => w.id));
+            }
         } catch (error) {
             toast.error('Failed to fetch vehicle details');
             navigate('/vehicles');
@@ -82,6 +98,7 @@ const VehicleForm = () => {
                 make: formData.make || undefined,
                 model: formData.model || undefined,
                 year: formData.year ? Number(formData.year) : undefined,
+                worker_ids: selectedWorkerIds,
             };
 
             if (isEdit && id) {
@@ -263,6 +280,48 @@ const VehicleForm = () => {
                                 max="2099"
                             />
                         </div>
+                    </div>
+
+                    {/* Assigned Workers */}
+                    <div className="mt-6">
+                        <label className="block text-sm font-semibold mb-2">Assigned Workers</label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Select workers who operate this vehicle. When creating a job, these workers will be suggested automatically.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+                            {allWorkers.length === 0 ? (
+                                <p className="text-sm text-gray-400 col-span-full">No active workers found</p>
+                            ) : (
+                                allWorkers.map((worker) => (
+                                    <label
+                                        key={worker.id}
+                                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                            selectedWorkerIds.includes(worker.id)
+                                                ? 'bg-primary/10 border border-primary'
+                                                : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="form-checkbox text-primary rounded"
+                                            checked={selectedWorkerIds.includes(worker.id)}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    setSelectedWorkerIds((prev) => [...prev, worker.id]);
+                                                } else {
+                                                    setSelectedWorkerIds((prev) => prev.filter((id) => id !== worker.id));
+                                                }
+                                            }}
+                                        />
+                                        <div className="min-w-0">
+                                            <div className="text-sm font-medium truncate">{worker.name}</div>
+                                            {worker.role && <div className="text-xs text-gray-500 truncate">{worker.role}</div>}
+                                        </div>
+                                    </label>
+                                ))
+                            )}
+                        </div>
+                        {selectedWorkerIds.length > 0 && (
+                            <p className="text-xs text-primary mt-1">{selectedWorkerIds.length} worker(s) selected</p>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-3 mt-8">

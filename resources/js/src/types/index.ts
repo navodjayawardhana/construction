@@ -31,6 +31,7 @@ export interface Vehicle {
     make?: string;
     model?: string;
     year?: number;
+    workers?: Worker[];
     created_at: string;
     updated_at: string;
 }
@@ -50,43 +51,27 @@ export interface Worker {
     updated_at: string;
 }
 
-export interface JcbJob {
+export interface Job {
     id: string;
+    job_type: 'jcb' | 'lorry';
     vehicle_id: string;
     client_id: string;
     worker_id?: string;
     job_date: string;
-    start_meter: number;
-    end_meter: number;
-    total_hours: number;
-    rate_type: 'hourly' | 'daily';
+    rate_type: 'hourly' | 'daily' | 'per_trip' | 'per_km' | 'per_day';
     rate_amount: number;
     total_amount: number;
     status: 'pending' | 'completed' | 'paid';
     location?: string;
     notes?: string;
-    vehicle?: Vehicle;
-    client?: Client;
-    worker?: Worker;
-    created_at: string;
-    updated_at: string;
-}
-
-export interface LorryJob {
-    id: string;
-    vehicle_id: string;
-    client_id: string;
-    worker_id?: string;
-    job_date: string;
-    rate_type: 'per_trip' | 'per_km' | 'per_day';
-    rate_amount: number;
+    // JCB-specific
+    start_meter?: number;
+    end_meter?: number;
+    total_hours?: number;
+    // Lorry-specific
     trips?: number;
     distance_km?: number;
     days?: number;
-    total_amount: number;
-    status: 'pending' | 'completed' | 'paid';
-    location?: string;
-    notes?: string;
     vehicle?: Vehicle;
     client?: Client;
     worker?: Worker;
@@ -100,6 +85,7 @@ export interface VehicleExpense {
     category: 'fuel' | 'repair' | 'maintenance' | 'insurance' | 'tire' | 'other';
     amount: number;
     expense_date: string;
+    date_to?: string;
     description?: string;
     vehicle?: Vehicle;
     created_at: string;
@@ -139,7 +125,7 @@ export interface Payment {
     payment_method: 'cash' | 'bank_transfer' | 'cheque' | 'other';
     notes?: string;
     client?: Client;
-    payable?: JcbJob | LorryJob;
+    payable?: Job;
     created_at: string;
     updated_at: string;
 }
@@ -152,6 +138,38 @@ export interface PaginatedResponse<T> {
     total: number;
 }
 
+export interface MonthlyVehicleBillItem {
+    id: string;
+    bill_id: string;
+    item_date: string;
+    start_meter: number;
+    end_meter: number;
+    total_hours: number;
+    rate: number;
+    amount: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface MonthlyVehicleBill {
+    id: string;
+    vehicle_id: string;
+    client_id: string;
+    month: number;
+    year: number;
+    overtime_kms: number;
+    rate: number;
+    overtime_amount: number;
+    total_hours_sum: number;
+    total_amount: number;
+    notes?: string;
+    vehicle?: Vehicle;
+    client?: Client;
+    items?: MonthlyVehicleBillItem[];
+    created_at: string;
+    updated_at: string;
+}
+
 export interface DashboardStats {
     total_revenue: number;
     total_expenses: number;
@@ -160,6 +178,5 @@ export interface DashboardStats {
     pending_jobs: number;
     monthly_revenue: { month: string; total: number }[];
     monthly_expenses: { month: string; total: number }[];
-    recent_jcb_jobs: JcbJob[];
-    recent_lorry_jobs: LorryJob[];
+    recent_jobs: Job[];
 }

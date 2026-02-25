@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Vehicle, JcbJob, LorryJob } from '../../types';
+import { Vehicle, Job, Worker } from '../../types';
 import { getVehicle } from '../../services/vehicleService';
 import PageHeader from '../../components/shared/PageHeader';
 import StatusBadge from '../../components/shared/StatusBadge';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
 
 interface VehicleWithJobs extends Vehicle {
-    jcb_jobs?: JcbJob[];
-    lorry_jobs?: LorryJob[];
+    jobs?: Job[];
+    workers?: Worker[];
 }
 
 const VehicleView = () => {
@@ -98,60 +98,58 @@ const VehicleView = () => {
                 </div>
             </div>
 
-            {vehicle.jcb_jobs && vehicle.jcb_jobs.length > 0 && (
+            {vehicle.workers && vehicle.workers.length > 0 && (
                 <div className="panel mt-5">
-                    <h3 className="text-lg font-semibold mb-5">JCB Jobs</h3>
-                    <div className="table-responsive">
-                        <table className="table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Location</th>
-                                    <th>Total Hours</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {vehicle.jcb_jobs.map((job) => (
-                                    <tr key={job.id}>
-                                        <td>{new Date(job.job_date).toLocaleDateString()}</td>
-                                        <td>{job.client?.name || '-'}</td>
-                                        <td>{job.location || '-'}</td>
-                                        <td>{job.total_hours}</td>
-                                        <td>Rs. {Number(job.total_amount).toLocaleString()}</td>
-                                        <td><StatusBadge status={job.status} type="job" /></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <h3 className="text-lg font-semibold mb-5">Assigned Workers</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {vehicle.workers.map((worker) => (
+                            <div key={worker.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                                    {worker.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="font-semibold text-sm truncate">{worker.name}</div>
+                                    {worker.role && <div className="text-xs text-gray-500 dark:text-gray-400">{worker.role}</div>}
+                                    {worker.phone && <div className="text-xs text-gray-500 dark:text-gray-400">{worker.phone}</div>}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}
 
-            {vehicle.lorry_jobs && vehicle.lorry_jobs.length > 0 && (
+            {vehicle.jobs && vehicle.jobs.length > 0 && (
                 <div className="panel mt-5">
-                    <h3 className="text-lg font-semibold mb-5">Lorry Jobs</h3>
+                    <h3 className="text-lg font-semibold mb-5">Jobs</h3>
                     <div className="table-responsive">
                         <table className="table-hover">
                             <thead>
                                 <tr>
                                     <th>Date</th>
+                                    <th>Type</th>
                                     <th>Client</th>
                                     <th>Location</th>
-                                    <th>Rate Type</th>
+                                    <th>Details</th>
                                     <th>Amount</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {vehicle.lorry_jobs.map((job) => (
+                                {vehicle.jobs.map((job) => (
                                     <tr key={job.id}>
                                         <td>{new Date(job.job_date).toLocaleDateString()}</td>
+                                        <td>
+                                            <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${job.job_type === 'jcb' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                {job.job_type}
+                                            </span>
+                                        </td>
                                         <td>{job.client?.name || '-'}</td>
                                         <td>{job.location || '-'}</td>
-                                        <td>{job.rate_type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}</td>
+                                        <td>
+                                            {job.job_type === 'jcb'
+                                                ? `${Number(job.total_hours || 0).toFixed(2)}h`
+                                                : (job.rate_type || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                                        </td>
                                         <td>Rs. {Number(job.total_amount).toLocaleString()}</td>
                                         <td><StatusBadge status={job.status} type="job" /></td>
                                     </tr>

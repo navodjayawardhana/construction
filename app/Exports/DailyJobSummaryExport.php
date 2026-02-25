@@ -30,26 +30,14 @@ class DailyJobSummaryExport implements FromArray, WithHeadings, WithTitle
         $rows = [];
 
         foreach ($this->data['dailySummary'] as $day) {
-            foreach ($day['jcb_jobs'] as $job) {
+            foreach ($day['jobs'] as $job) {
                 $rows[] = [
                     $day['date'],
-                    'JCB',
+                    strtoupper($job->job_type),
                     $job->vehicle->name ?? '-',
                     $job->client->name ?? '-',
                     $job->location ?? '-',
-                    $job->total_hours . ' hrs',
-                    number_format($job->total_amount, 2),
-                ];
-            }
-
-            foreach ($day['lorry_jobs'] as $job) {
-                $rows[] = [
-                    $day['date'],
-                    'Lorry',
-                    $job->vehicle->name ?? '-',
-                    $job->client->name ?? '-',
-                    $job->location ?? '-',
-                    ucfirst(str_replace('_', ' ', $job->rate_type)),
+                    $job->job_type === 'jcb' ? $job->total_hours . ' hrs' : ucfirst(str_replace('_', ' ', $job->rate_type)),
                     number_format($job->total_amount, 2),
                 ];
             }

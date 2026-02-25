@@ -24,11 +24,14 @@ const ExpenseForm = () => {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [dateMode, setDateMode] = useState<'single' | 'range'>('single');
     const [formData, setFormData] = useState({
         vehicle_id: '',
         category: '',
         amount: '',
         expense_date: '',
+        date_from: '',
+        date_to: '',
         description: '',
     });
 
@@ -80,11 +83,19 @@ const ExpenseForm = () => {
         e.preventDefault();
         setSubmitting(true);
 
-        const payload = {
-            ...formData,
+        const payload: any = {
             vehicle_id: formData.vehicle_id,
+            category: formData.category,
             amount: Number(formData.amount),
+            description: formData.description,
         };
+
+        if (!isEdit && dateMode === 'range') {
+            payload.date_from = formData.date_from;
+            payload.date_to = formData.date_to;
+        } else {
+            payload.expense_date = formData.expense_date;
+        }
 
         try {
             if (isEdit && id) {
@@ -182,18 +193,60 @@ const ExpenseForm = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="expense_date" className="label">
+                            <label className="label">
                                 Date <span className="text-danger">*</span>
                             </label>
-                            <input
-                                id="expense_date"
-                                name="expense_date"
-                                type="date"
-                                className="form-input"
-                                value={formData.expense_date}
-                                onChange={handleChange}
-                                required
-                            />
+                            {!isEdit && (
+                                <div className="flex mb-2">
+                                    <button
+                                        type="button"
+                                        className={`btn btn-sm ${dateMode === 'single' ? 'btn-primary' : 'btn-outline-primary'} rounded-r-none`}
+                                        onClick={() => setDateMode('single')}
+                                    >
+                                        Single Day
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`btn btn-sm ${dateMode === 'range' ? 'btn-primary' : 'btn-outline-primary'} rounded-l-none`}
+                                        onClick={() => setDateMode('range')}
+                                    >
+                                        Date Range
+                                    </button>
+                                </div>
+                            )}
+                            {dateMode === 'single' || isEdit ? (
+                                <input
+                                    id="expense_date"
+                                    name="expense_date"
+                                    type="date"
+                                    className="form-input"
+                                    value={formData.expense_date}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            ) : (
+                                <div className="flex gap-2">
+                                    <input
+                                        id="date_from"
+                                        name="date_from"
+                                        type="date"
+                                        className="form-input"
+                                        value={formData.date_from}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                    <span className="self-center text-sm">to</span>
+                                    <input
+                                        id="date_to"
+                                        name="date_to"
+                                        type="date"
+                                        className="form-input"
+                                        value={formData.date_to}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 

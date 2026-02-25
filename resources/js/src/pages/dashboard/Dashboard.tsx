@@ -145,77 +145,44 @@ const Dashboard = () => {
             </div>
 
             {/* Recent Jobs */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Recent JCB Jobs */}
-                <div className="panel">
-                    <div className="flex items-center justify-between mb-5">
-                        <h5 className="font-semibold text-lg dark:text-white-light">Recent JCB Jobs</h5>
-                        <Link to="/jcb-jobs" className="text-construction hover:underline text-sm">View All</Link>
-                    </div>
-                    <div className="table-responsive">
-                        <table className="table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Hours</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stats?.recent_jcb_jobs?.length ? (
-                                    stats.recent_jcb_jobs.map((job) => (
-                                        <tr key={job.id}>
-                                            <td>{new Date(job.job_date).toLocaleDateString()}</td>
-                                            <td>{job.client?.name}</td>
-                                            <td>{job.total_hours}</td>
-                                            <td>{formatCurrency(job.total_amount)}</td>
-                                            <td><StatusBadge status={job.status} /></td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr><td colSpan={5} className="text-center text-gray-500">No recent jobs</td></tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+            <div className="panel">
+                <div className="flex items-center justify-between mb-5">
+                    <h5 className="font-semibold text-lg dark:text-white-light">Recent Jobs</h5>
+                    <Link to="/jobs" className="text-construction hover:underline text-sm">View All</Link>
                 </div>
-
-                {/* Recent Lorry Jobs */}
-                <div className="panel">
-                    <div className="flex items-center justify-between mb-5">
-                        <h5 className="font-semibold text-lg dark:text-white-light">Recent Lorry Jobs</h5>
-                        <Link to="/lorry-jobs" className="text-construction hover:underline text-sm">View All</Link>
-                    </div>
-                    <div className="table-responsive">
-                        <table className="table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Client</th>
-                                    <th>Type</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {stats?.recent_lorry_jobs?.length ? (
-                                    stats.recent_lorry_jobs.map((job) => (
-                                        <tr key={job.id}>
-                                            <td>{new Date(job.job_date).toLocaleDateString()}</td>
-                                            <td>{job.client?.name}</td>
-                                            <td className="capitalize">{job.rate_type.replace('_', ' ')}</td>
-                                            <td>{formatCurrency(job.total_amount)}</td>
-                                            <td><StatusBadge status={job.status} /></td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr><td colSpan={5} className="text-center text-gray-500">No recent jobs</td></tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                <div className="table-responsive">
+                    <table className="table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Client</th>
+                                <th>Vehicle</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stats?.recent_jobs?.length ? (
+                                stats.recent_jobs.map((job) => (
+                                    <tr key={job.id}>
+                                        <td>{new Date(job.job_date).toLocaleDateString()}</td>
+                                        <td>
+                                            <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${job.job_type === 'jcb' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                {job.job_type}
+                                            </span>
+                                        </td>
+                                        <td>{job.client?.name}</td>
+                                        <td>{job.vehicle?.name}</td>
+                                        <td>{formatCurrency(job.total_amount)}</td>
+                                        <td><StatusBadge status={job.status} /></td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr><td colSpan={6} className="text-center text-gray-500">No recent jobs</td></tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

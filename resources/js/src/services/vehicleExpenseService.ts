@@ -40,3 +40,23 @@ export const updateExpense = (id: string, data: Partial<VehicleExpense>): Promis
 export const deleteExpense = (id: string): Promise<AxiosResponse<void>> => {
     return api.delete(`/vehicle-expenses/${id}`);
 };
+
+export interface ExpenseSummaryItem {
+    category: string;
+    total: number;
+}
+
+export const getExpenseSummary = (params?: { vehicle_id?: string; category?: string }): Promise<AxiosResponse<ExpenseSummaryItem[]>> => {
+    return api.get('/vehicle-expenses/summary', { params });
+};
+
+export interface VehicleExpenseSummary {
+    vehicle_id: string;
+    vehicle: { id: string; name: string; registration_number?: string; type: string };
+    total_amount: number;
+    expense_count: number;
+}
+
+export const getVehicleExpenseSummary = (params?: { page?: number; per_page?: number }): Promise<AxiosResponse<PaginatedResponse<VehicleExpenseSummary>>> => {
+    return api.get('/vehicle-expenses/vehicle-summary', { params });
+};

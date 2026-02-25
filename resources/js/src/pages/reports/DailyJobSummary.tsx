@@ -205,68 +205,43 @@ const DailyJobSummary = () => {
                             </div>
 
                             {expandedDates.has(day.date) && (
-                                <div className="mt-4 space-y-4">
-                                    {day.jcb_jobs.length > 0 && (
-                                        <div>
-                                            <p className="text-sm font-semibold text-blue-600 mb-2">JCB Jobs</p>
-                                            <div className="table-responsive">
-                                                <table className="table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Vehicle</th>
-                                                            <th>Client</th>
-                                                            <th>Location</th>
-                                                            <th>Hours</th>
-                                                            <th>Amount</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {day.jcb_jobs.map((job) => (
-                                                            <tr key={job.id}>
-                                                                <td className="text-yellow-600 font-semibold">{job.vehicle?.name || '-'}</td>
-                                                                <td>{job.client?.name || '-'}</td>
-                                                                <td>{job.location || '-'}</td>
-                                                                <td>{job.total_hours}</td>
-                                                                <td className="font-semibold">{formatCurrency(job.total_amount)}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    )}
+                                <div className="mt-4">
+                                    <div className="table-responsive">
+                                        <table className="table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>Vehicle</th>
+                                                    <th>Client</th>
+                                                    <th>Location</th>
+                                                    <th>Details</th>
+                                                    <th>Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {day.jobs.map((job) => (
+                                                    <tr key={job.id}>
+                                                        <td>
+                                                            <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${job.job_type === 'jcb' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                                {job.job_type}
+                                                            </span>
+                                                        </td>
+                                                        <td className="text-yellow-600 font-semibold">{job.vehicle?.name || '-'}</td>
+                                                        <td>{job.client?.name || '-'}</td>
+                                                        <td>{job.location || '-'}</td>
+                                                        <td>
+                                                            {job.job_type === 'jcb'
+                                                                ? `${Number(job.total_hours || 0).toFixed(2)}h`
+                                                                : (job.rate_type || '').replace('_', ' ')}
+                                                        </td>
+                                                        <td className="font-semibold">{formatCurrency(job.total_amount)}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
-                                    {day.lorry_jobs.length > 0 && (
-                                        <div>
-                                            <p className="text-sm font-semibold text-amber-600 mb-2">Lorry Jobs</p>
-                                            <div className="table-responsive">
-                                                <table className="table-hover">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Vehicle</th>
-                                                            <th>Client</th>
-                                                            <th>Location</th>
-                                                            <th>Rate Type</th>
-                                                            <th>Amount</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {day.lorry_jobs.map((job) => (
-                                                            <tr key={job.id}>
-                                                                <td className="text-yellow-600 font-semibold">{job.vehicle?.name || '-'}</td>
-                                                                <td>{job.client?.name || '-'}</td>
-                                                                <td>{job.location || '-'}</td>
-                                                                <td className="capitalize">{job.rate_type.replace('_', ' ')}</td>
-                                                                <td className="font-semibold">{formatCurrency(job.total_amount)}</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex justify-end gap-6 text-sm pt-2 border-t">
+                                    <div className="flex justify-end gap-6 text-sm pt-2 border-t mt-2">
                                         <span>JCB: <strong>{formatCurrency(day.jcb_total)}</strong></span>
                                         <span>Lorry: <strong>{formatCurrency(day.lorry_total)}</strong></span>
                                         <span>Total: <strong className="text-green-600">{formatCurrency(day.daily_total)}</strong></span>

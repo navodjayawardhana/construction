@@ -20,11 +20,13 @@ class VehicleExpense extends Model
         'category',
         'amount',
         'expense_date',
+        'date_to',
         'description',
     ];
 
     protected $casts = [
-        'expense_date' => 'date',
+        'expense_date' => 'date:Y-m-d',
+        'date_to' => 'date:Y-m-d',
         'amount' => 'decimal:2',
     ];
 

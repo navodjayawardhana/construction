@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Vehicle extends Model
@@ -26,18 +27,18 @@ class Vehicle extends Model
         'year',
     ];
 
-    public function jcbJobs(): HasMany
+    public function jobs(): HasMany
     {
-        return $this->hasMany(JcbJob::class);
-    }
-
-    public function lorryJobs(): HasMany
-    {
-        return $this->hasMany(LorryJob::class);
+        return $this->hasMany(Job::class);
     }
 
     public function expenses(): HasMany
     {
         return $this->hasMany(VehicleExpense::class);
+    }
+
+    public function workers(): BelongsToMany
+    {
+        return $this->belongsToMany(Worker::class)->withTimestamps();
     }
 }

@@ -28,6 +28,7 @@ class VehicleController extends Controller
             $query->where('status', $status);
         }
 
+        $query->with('workers');
         $vehicles = $query->latest()->paginate(15);
 
         return response()->json($vehicles);
@@ -44,16 +45,27 @@ class VehicleController extends Controller
             'make' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
             'year' => 'nullable|integer',
+            'worker_ids' => 'nullable|array',
+            'worker_ids.*' => 'exists:workers,id',
         ]);
 
+        $workerIds = $validated['worker_ids'] ?? [];
+        unset($validated['worker_ids']);
+
         $vehicle = Vehicle::create($validated);
+
+        if (!empty($workerIds)) {
+            $vehicle->workers()->sync($workerIds);
+        }
+
+        $vehicle->load('workers');
 
         return response()->json($vehicle, 201);
     }
 
     public function show(string $id): JsonResponse
     {
-        $vehicle = Vehicle::findOrFail($id);
+        $vehicle = Vehicle::with('workers')->findOrFail($id);
 
         return response()->json($vehicle);
     }
@@ -71,9 +83,20 @@ class VehicleController extends Controller
             'make' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
             'year' => 'nullable|integer',
+            'worker_ids' => 'nullable|array',
+            'worker_ids.*' => 'exists:workers,id',
         ]);
 
+        $workerIds = $validated['worker_ids'] ?? null;
+        unset($validated['worker_ids']);
+
         $vehicle->update($validated);
+
+        if ($workerIds !== null) {
+            $vehicle->workers()->sync($workerIds);
+        }
+
+        $vehicle->load('workers');
 
         return response()->json($vehicle);
     }

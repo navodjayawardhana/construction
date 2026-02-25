@@ -16,16 +16,11 @@ const ClientList = lazy(() => import('../pages/clients/ClientList'));
 const ClientForm = lazy(() => import('../pages/clients/ClientForm'));
 const ClientView = lazy(() => import('../pages/clients/ClientView'));
 
-// JCB Jobs
-const JcbJobList = lazy(() => import('../pages/jcb-jobs/JcbJobList'));
-const JcbJobForm = lazy(() => import('../pages/jcb-jobs/JcbJobForm'));
-const JcbJobView = lazy(() => import('../pages/jcb-jobs/JcbJobView'));
-const JobCreatePOS = lazy(() => import('../pages/jcb-jobs/JobCreatePOS'));
-
-// Lorry Jobs
-const LorryJobList = lazy(() => import('../pages/lorry-jobs/LorryJobList'));
-const LorryJobForm = lazy(() => import('../pages/lorry-jobs/LorryJobForm'));
-const LorryJobView = lazy(() => import('../pages/lorry-jobs/LorryJobView'));
+// Jobs (unified)
+const JobList = lazy(() => import('../pages/jobs/JobList'));
+const JobForm = lazy(() => import('../pages/jobs/JobForm'));
+const JobView = lazy(() => import('../pages/jobs/JobView'));
+const JobCreatePOS = lazy(() => import('../pages/jobs/JobCreatePOS'));
 
 // Workers
 const WorkerList = lazy(() => import('../pages/workers/WorkerList'));
@@ -37,6 +32,7 @@ const SalaryPaymentList = lazy(() => import('../pages/workers/SalaryPaymentList'
 
 // Expenses
 const ExpenseList = lazy(() => import('../pages/expenses/ExpenseList'));
+const VehicleExpenses = lazy(() => import('../pages/expenses/VehicleExpenses'));
 const ExpenseForm = lazy(() => import('../pages/expenses/ExpenseForm'));
 
 // Reports
@@ -47,9 +43,11 @@ const VehicleReport = lazy(() => import('../pages/reports/VehicleReport'));
 const DailyJobSummary = lazy(() => import('../pages/reports/DailyJobSummary'));
 
 // Invoices
-const JcbJobInvoice = lazy(() => import('../pages/invoices/JcbJobInvoice'));
-const LorryJobInvoice = lazy(() => import('../pages/invoices/LorryJobInvoice'));
+const JobInvoice = lazy(() => import('../pages/invoices/JobInvoice'));
 const ClientCombinedInvoice = lazy(() => import('../pages/invoices/ClientCombinedInvoice'));
+const MonthlyVehicleBillList = lazy(() => import('../pages/invoices/MonthlyVehicleBillList'));
+const MonthlyVehicleBillForm = lazy(() => import('../pages/invoices/MonthlyVehicleBillForm'));
+const MonthlyVehicleBillView = lazy(() => import('../pages/invoices/MonthlyVehicleBillView'));
 
 // Paysheets
 const WorkerPayslip = lazy(() => import('../pages/paysheets/WorkerPayslip'));
@@ -113,52 +111,25 @@ const routes = [
         element: <ClientView />,
         layout: 'default',
     },
-    // Create Job (POS)
+    // Jobs (unified)
     {
         path: '/jobs/create',
         element: <JobCreatePOS />,
         layout: 'default',
     },
-    // JCB Jobs
     {
-        path: '/jcb-jobs',
-        element: <JcbJobList />,
+        path: '/jobs',
+        element: <JobList />,
         layout: 'default',
     },
     {
-        path: '/jcb-jobs/create',
-        element: <JobCreatePOS />,
+        path: '/jobs/:id/edit',
+        element: <JobForm />,
         layout: 'default',
     },
     {
-        path: '/jcb-jobs/:id/edit',
-        element: <JcbJobForm />,
-        layout: 'default',
-    },
-    {
-        path: '/jcb-jobs/:id',
-        element: <JcbJobView />,
-        layout: 'default',
-    },
-    // Lorry Jobs
-    {
-        path: '/lorry-jobs',
-        element: <LorryJobList />,
-        layout: 'default',
-    },
-    {
-        path: '/lorry-jobs/create',
-        element: <JobCreatePOS />,
-        layout: 'default',
-    },
-    {
-        path: '/lorry-jobs/:id/edit',
-        element: <LorryJobForm />,
-        layout: 'default',
-    },
-    {
-        path: '/lorry-jobs/:id',
-        element: <LorryJobView />,
+        path: '/jobs/:id',
+        element: <JobView />,
         layout: 'default',
     },
     // Workers
@@ -204,6 +175,11 @@ const routes = [
         layout: 'default',
     },
     {
+        path: '/expenses/vehicle/:vehicleId',
+        element: <VehicleExpenses />,
+        layout: 'default',
+    },
+    {
         path: '/expenses/create',
         element: <ExpenseForm />,
         layout: 'default',
@@ -241,18 +217,33 @@ const routes = [
     },
     // Invoices
     {
-        path: '/invoices/jcb-job/:id',
-        element: <JcbJobInvoice />,
-        layout: 'blank',
-    },
-    {
-        path: '/invoices/lorry-job/:id',
-        element: <LorryJobInvoice />,
+        path: '/invoices/job/:id',
+        element: <JobInvoice />,
         layout: 'blank',
     },
     {
         path: '/invoices/client-combined',
         element: <ClientCombinedInvoice />,
+        layout: 'blank',
+    },
+    {
+        path: '/invoices/monthly-vehicle-bill',
+        element: <MonthlyVehicleBillList />,
+        layout: 'default',
+    },
+    {
+        path: '/invoices/monthly-vehicle-bill/create',
+        element: <MonthlyVehicleBillForm />,
+        layout: 'default',
+    },
+    {
+        path: '/invoices/monthly-vehicle-bill/:id/edit',
+        element: <MonthlyVehicleBillForm />,
+        layout: 'default',
+    },
+    {
+        path: '/invoices/monthly-vehicle-bill/:id/view',
+        element: <MonthlyVehicleBillView />,
         layout: 'blank',
     },
     // Paysheets

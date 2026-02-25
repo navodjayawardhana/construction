@@ -133,6 +133,11 @@
         border-color: #2563eb !important;
     }
 
+    /* Show print-only elements */
+    .print-content .print-show {
+        display: inline !important;
+    }
+
     @page {
         size: A4;
         margin: 10mm;

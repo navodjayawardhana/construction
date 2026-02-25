@@ -60,8 +60,7 @@ const VehicleReport = () => {
     const [dateTo, setDateTo] = useState('');
     const [data, setData] = useState<VehicleReportData | null>(null);
     const [loading, setLoading] = useState(false);
-    const [jcbPage, setJcbPage] = useState(1);
-    const [lorryPage, setLorryPage] = useState(1);
+    const [jobPage, setJobPage] = useState(1);
     const [expensePage, setExpensePage] = useState(1);
 
     useEffect(() => {
@@ -77,7 +76,7 @@ const VehicleReport = () => {
         }
     };
 
-    const fetchReport = async (jcb = jcbPage, lorry = lorryPage, expense = expensePage) => {
+    const fetchReport = async (job = jobPage, expense = expensePage) => {
         if (!vehicleId || !dateFrom || !dateTo) return;
         setLoading(true);
         try {
@@ -85,8 +84,7 @@ const VehicleReport = () => {
                 vehicle_id: vehicleId,
                 date_from: dateFrom,
                 date_to: dateTo,
-                jcb_page: jcb,
-                lorry_page: lorry,
+                job_page: job,
                 expense_page: expense,
             });
             setData(response.data);
@@ -102,25 +100,19 @@ const VehicleReport = () => {
             toast.error('Please select vehicle and date range');
             return;
         }
-        setJcbPage(1);
-        setLorryPage(1);
+        setJobPage(1);
         setExpensePage(1);
-        fetchReport(1, 1, 1);
+        fetchReport(1, 1);
     };
 
-    const handleJcbPageChange = (page: number) => {
-        setJcbPage(page);
-        fetchReport(page, lorryPage, expensePage);
-    };
-
-    const handleLorryPageChange = (page: number) => {
-        setLorryPage(page);
-        fetchReport(jcbPage, page, expensePage);
+    const handleJobPageChange = (page: number) => {
+        setJobPage(page);
+        fetchReport(page, expensePage);
     };
 
     const handleExpensePageChange = (page: number) => {
         setExpensePage(page);
-        fetchReport(jcbPage, lorryPage, page);
+        fetchReport(jobPage, page);
     };
 
     const handleExport = async (format: 'pdf' | 'excel') => {
@@ -221,30 +213,40 @@ const VehicleReport = () => {
                         </div>
                     </div>
 
-                    {/* JCB Jobs */}
-                    {data.jcb_jobs.total > 0 && (
+                    {/* Jobs */}
+                    {data.jobs.total > 0 && (
                         <div className="panel">
-                            <h3 className="text-lg font-bold mb-4">JCB Jobs ({data.jcb_jobs.total})</h3>
+                            <h3 className="text-lg font-bold mb-4">Jobs ({data.jobs.total})</h3>
                             <div className="table-responsive">
                                 <table className="table-hover">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
+                                            <th>Type</th>
                                             <th>Client</th>
                                             <th>Location</th>
-                                            <th>Hours</th>
+                                            <th>Details</th>
                                             <th>Rate</th>
                                             <th>Amount</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {data.jcb_jobs.data.map((job) => (
+                                        {data.jobs.data.map((job) => (
                                             <tr key={job.id}>
                                                 <td>{formatDate(job.job_date)}</td>
+                                                <td>
+                                                    <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded ${job.job_type === 'jcb' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                        {job.job_type}
+                                                    </span>
+                                                </td>
                                                 <td>{job.client?.name || '-'}</td>
                                                 <td>{job.location || '-'}</td>
-                                                <td>{job.total_hours}</td>
+                                                <td>
+                                                    {job.job_type === 'jcb'
+                                                        ? `${Number(job.total_hours || 0).toFixed(2)}h`
+                                                        : (job.rate_type || '').replace('_', ' ')}
+                                                </td>
                                                 <td>{formatCurrency(job.rate_amount)}</td>
                                                 <td className="font-semibold">{formatCurrency(job.total_amount)}</td>
                                                 <td><StatusBadge status={job.status} /></td>
@@ -253,57 +255,14 @@ const VehicleReport = () => {
                                     </tbody>
                                     <tfoot>
                                         <tr className="font-bold">
-                                            <td colSpan={5} className="text-right">JCB Total:</td>
-                                            <td>{formatCurrency(data.summary.total_jcb_revenue)}</td>
+                                            <td colSpan={6} className="text-right">Total:</td>
+                                            <td>{formatCurrency(data.summary.total_revenue)}</td>
                                             <td></td>
                                         </tr>
                                     </tfoot>
                                 </table>
                             </div>
-                            <Pagination currentPage={data.jcb_jobs.current_page} lastPage={data.jcb_jobs.last_page} onPageChange={handleJcbPageChange} />
-                        </div>
-                    )}
-
-                    {/* Lorry Jobs */}
-                    {data.lorry_jobs.total > 0 && (
-                        <div className="panel">
-                            <h3 className="text-lg font-bold mb-4">Lorry Jobs ({data.lorry_jobs.total})</h3>
-                            <div className="table-responsive">
-                                <table className="table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Client</th>
-                                            <th>Location</th>
-                                            <th>Rate Type</th>
-                                            <th>Rate</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {data.lorry_jobs.data.map((job) => (
-                                            <tr key={job.id}>
-                                                <td>{formatDate(job.job_date)}</td>
-                                                <td>{job.client?.name || '-'}</td>
-                                                <td>{job.location || '-'}</td>
-                                                <td className="capitalize">{job.rate_type.replace('_', ' ')}</td>
-                                                <td>{formatCurrency(job.rate_amount)}</td>
-                                                <td className="font-semibold">{formatCurrency(job.total_amount)}</td>
-                                                <td><StatusBadge status={job.status} /></td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr className="font-bold">
-                                            <td colSpan={5} className="text-right">Lorry Total:</td>
-                                            <td>{formatCurrency(data.summary.total_lorry_revenue)}</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                            <Pagination currentPage={data.lorry_jobs.current_page} lastPage={data.lorry_jobs.last_page} onPageChange={handleLorryPageChange} />
+                            <Pagination currentPage={data.jobs.current_page} lastPage={data.jobs.last_page} onPageChange={handleJobPageChange} />
                         </div>
                     )}
 

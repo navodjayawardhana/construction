@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\JcbJob;
-use App\Models\LorryJob;
+use App\Models\Job;
 use App\Models\Vehicle;
 use App\Models\VehicleExpense;
 use App\Models\Worker;
@@ -16,31 +15,17 @@ class DashboardController extends Controller
 {
     public function index(): JsonResponse
     {
-        $totalRevenueJcb = JcbJob::where('status', 'paid')->sum('total_amount');
-        $totalRevenueLorry = LorryJob::where('status', 'paid')->sum('total_amount');
-        $totalRevenue = $totalRevenueJcb + $totalRevenueLorry;
-
+        $totalRevenue = Job::whereIn('status', ['completed', 'paid'])->sum('total_amount');
         $totalExpenses = VehicleExpense::sum('amount');
 
         $activeVehicles = Vehicle::where('status', 'active')->count();
         $activeWorkers = Worker::where('is_active', true)->count();
 
-        $pendingJcb = JcbJob::where('status', 'pending')->count();
-        $pendingLorry = LorryJob::where('status', 'pending')->count();
-        $pendingJobs = $pendingJcb + $pendingLorry;
+        $pendingJobs = Job::where('status', 'pending')->count();
 
         $sixMonthsAgo = Carbon::now()->subMonths(5)->startOfMonth();
 
-        $monthlyRevenueJcb = JcbJob::where('status', 'paid')
-            ->where('job_date', '>=', $sixMonthsAgo)
-            ->select(
-                DB::raw("DATE_FORMAT(job_date, '%Y-%m') as month"),
-                DB::raw('SUM(total_amount) as total')
-            )
-            ->groupBy('month')
-            ->pluck('total', 'month');
-
-        $monthlyRevenueLorry = LorryJob::where('status', 'paid')
+        $monthlyRevenueData = Job::whereIn('status', ['completed', 'paid'])
             ->where('job_date', '>=', $sixMonthsAgo)
             ->select(
                 DB::raw("DATE_FORMAT(job_date, '%Y-%m') as month"),
@@ -57,16 +42,13 @@ class DashboardController extends Controller
             ->groupBy('month')
             ->pluck('total', 'month');
 
-        // Build last 6 months arrays
         $monthlyRevenue = [];
         $monthlyExpensesData = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i)->format('Y-m');
-            $jcbRev = (float) ($monthlyRevenueJcb[$month] ?? 0);
-            $lorryRev = (float) ($monthlyRevenueLorry[$month] ?? 0);
             $monthlyRevenue[] = [
                 'month' => $month,
-                'total' => $jcbRev + $lorryRev,
+                'total' => (float) ($monthlyRevenueData[$month] ?? 0),
             ];
             $monthlyExpensesData[] = [
                 'month' => $month,
@@ -74,14 +56,9 @@ class DashboardController extends Controller
             ];
         }
 
-        $recentJcbJobs = JcbJob::with(['vehicle', 'client', 'worker'])
+        $recentJobs = Job::with(['vehicle', 'client', 'worker'])
             ->latest('job_date')
-            ->take(5)
-            ->get();
-
-        $recentLorryJobs = LorryJob::with(['vehicle', 'client', 'worker'])
-            ->latest('job_date')
-            ->take(5)
+            ->take(10)
             ->get();
 
         return response()->json([
@@ -92,8 +69,7 @@ class DashboardController extends Controller
             'pending_jobs' => $pendingJobs,
             'monthly_revenue' => $monthlyRevenue,
             'monthly_expenses' => $monthlyExpensesData,
-            'recent_jcb_jobs' => $recentJcbJobs,
-            'recent_lorry_jobs' => $recentLorryJobs,
+            'recent_jobs' => $recentJobs,
         ]);
     }
 }

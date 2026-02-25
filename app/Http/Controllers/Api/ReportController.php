@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\JcbJob;
-use App\Models\LorryJob;
+use App\Models\Job;
 use App\Models\Payment;
 use App\Models\VehicleExpense;
 use App\Models\SalaryPayment;
@@ -22,9 +21,6 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
-    /**
-     * Client Statement: jobs + payments + balance for a client in date range
-     */
     public function clientStatement(Request $request): JsonResponse
     {
         $request->validate([
@@ -37,14 +33,7 @@ class ReportController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        // Get ALL data for summary calculations
-        $allJcbJobs = JcbJob::with(['vehicle', 'worker'])
-            ->where('client_id', $clientId)
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->get();
-
-        $allLorryJobs = LorryJob::with(['vehicle', 'worker'])
+        $allJobs = Job::with(['vehicle', 'worker'])
             ->where('client_id', $clientId)
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
@@ -55,24 +44,17 @@ class ReportController extends Controller
             ->orderBy('payment_date')
             ->get();
 
-        $totalJcb = $allJcbJobs->sum('total_amount');
-        $totalLorry = $allLorryJobs->sum('total_amount');
+        $totalJcb = $allJobs->where('job_type', 'jcb')->sum('total_amount');
+        $totalLorry = $allJobs->where('job_type', 'lorry')->sum('total_amount');
         $totalJobsAmount = $totalJcb + $totalLorry;
         $totalPayments = $allPayments->sum('amount');
         $outstandingBalance = $totalJobsAmount - $totalPayments;
 
-        // Paginate each collection independently
-        $jcbJobs = JcbJob::with(['vehicle', 'worker'])
+        $jobs = Job::with(['vehicle', 'worker'])
             ->where('client_id', $clientId)
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
-            ->paginate(15, ['*'], 'jcb_page');
-
-        $lorryJobs = LorryJob::with(['vehicle', 'worker'])
-            ->where('client_id', $clientId)
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->paginate(15, ['*'], 'lorry_page');
+            ->paginate(15, ['*'], 'job_page');
 
         $payments = Payment::where('client_id', $clientId)
             ->whereBetween('payment_date', [$dateFrom, $dateTo])
@@ -80,8 +62,7 @@ class ReportController extends Controller
             ->paginate(15, ['*'], 'payment_page');
 
         return response()->json([
-            'jcb_jobs' => $jcbJobs,
-            'lorry_jobs' => $lorryJobs,
+            'jobs' => $jobs,
             'payments' => $payments,
             'summary' => [
                 'total_jcb_amount' => $totalJcb,
@@ -93,9 +74,6 @@ class ReportController extends Controller
         ]);
     }
 
-    /**
-     * Monthly Revenue & Expense: P&L for a given month/year
-     */
     public function monthlyRevenueExpense(Request $request): JsonResponse
     {
         $request->validate([
@@ -106,24 +84,17 @@ class ReportController extends Controller
         $month = $request->input('month');
         $year = $request->input('year');
 
-        // Revenue
-        $jcbJobs = JcbJob::whereMonth('job_date', $month)
+        $jobs = Job::whereMonth('job_date', $month)
             ->whereYear('job_date', $year)
             ->get();
 
-        $lorryJobs = LorryJob::whereMonth('job_date', $month)
-            ->whereYear('job_date', $year)
-            ->get();
+        $jcbRevenue = $jobs->where('job_type', 'jcb')->sum('total_amount');
+        $lorryRevenue = $jobs->where('job_type', 'lorry')->sum('total_amount');
 
-        $jcbRevenue = $jcbJobs->sum('total_amount');
-        $lorryRevenue = $lorryJobs->sum('total_amount');
-
-        // Lorry breakdown by rate_type
-        $lorryByType = $lorryJobs->groupBy('rate_type')->map(function ($group) {
+        $lorryByType = $jobs->where('job_type', 'lorry')->groupBy('rate_type')->map(function ($group) {
             return $group->sum('total_amount');
         });
 
-        // Expenses
         $vehicleExpenses = VehicleExpense::whereMonth('expense_date', $month)
             ->whereYear('expense_date', $year)
             ->get();
@@ -147,9 +118,9 @@ class ReportController extends Controller
         return response()->json([
             'revenue' => [
                 'jcb_total' => $jcbRevenue,
-                'jcb_count' => $jcbJobs->count(),
+                'jcb_count' => $jobs->where('job_type', 'jcb')->count(),
                 'lorry_total' => $lorryRevenue,
-                'lorry_count' => $lorryJobs->count(),
+                'lorry_count' => $jobs->where('job_type', 'lorry')->count(),
                 'lorry_by_type' => $lorryByType,
                 'total' => $totalRevenue,
             ],
@@ -164,9 +135,6 @@ class ReportController extends Controller
         ]);
     }
 
-    /**
-     * Vehicle Report: jobs, expenses, net income for a vehicle in date range
-     */
     public function vehicleReport(Request $request): JsonResponse
     {
         $request->validate([
@@ -179,14 +147,7 @@ class ReportController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        // Get ALL data for summary calculations
-        $allJcbJobs = JcbJob::with(['client', 'worker'])
-            ->where('vehicle_id', $vehicleId)
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->get();
-
-        $allLorryJobs = LorryJob::with(['client', 'worker'])
+        $allJobs = Job::with(['client', 'worker'])
             ->where('vehicle_id', $vehicleId)
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
@@ -201,22 +162,17 @@ class ReportController extends Controller
             return $group->sum('amount');
         });
 
-        $totalRevenue = $allJcbJobs->sum('total_amount') + $allLorryJobs->sum('total_amount');
+        $totalJcbRevenue = $allJobs->where('job_type', 'jcb')->sum('total_amount');
+        $totalLorryRevenue = $allJobs->where('job_type', 'lorry')->sum('total_amount');
+        $totalRevenue = $totalJcbRevenue + $totalLorryRevenue;
         $totalExpenses = $allExpenses->sum('amount');
         $netIncome = $totalRevenue - $totalExpenses;
 
-        // Paginate each collection independently
-        $jcbJobs = JcbJob::with(['client', 'worker'])
+        $jobs = Job::with(['client', 'worker'])
             ->where('vehicle_id', $vehicleId)
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
-            ->paginate(15, ['*'], 'jcb_page');
-
-        $lorryJobs = LorryJob::with(['client', 'worker'])
-            ->where('vehicle_id', $vehicleId)
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->paginate(15, ['*'], 'lorry_page');
+            ->paginate(15, ['*'], 'job_page');
 
         $expenses = VehicleExpense::where('vehicle_id', $vehicleId)
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
@@ -224,12 +180,11 @@ class ReportController extends Controller
             ->paginate(15, ['*'], 'expense_page');
 
         return response()->json([
-            'jcb_jobs' => $jcbJobs,
-            'lorry_jobs' => $lorryJobs,
+            'jobs' => $jobs,
             'expenses' => $expenses,
             'summary' => [
-                'total_jcb_revenue' => $allJcbJobs->sum('total_amount'),
-                'total_lorry_revenue' => $allLorryJobs->sum('total_amount'),
+                'total_jcb_revenue' => $totalJcbRevenue,
+                'total_lorry_revenue' => $totalLorryRevenue,
                 'total_revenue' => $totalRevenue,
                 'expenses_by_category' => $expensesByCategory,
                 'total_expenses' => $totalExpenses,
@@ -238,9 +193,6 @@ class ReportController extends Controller
         ]);
     }
 
-    /**
-     * Daily Job Summary: all jobs grouped by date with daily totals
-     */
     public function dailyJobSummary(Request $request): JsonResponse
     {
         $request->validate([
@@ -251,45 +203,31 @@ class ReportController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        $jcbJobs = JcbJob::with(['vehicle', 'client', 'worker'])
+        $allJobs = Job::with(['vehicle', 'client', 'worker'])
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
             ->get();
 
-        $lorryJobs = LorryJob::with(['vehicle', 'client', 'worker'])
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->get();
-
-        // Group by date
-        $jcbByDate = $jcbJobs->groupBy(function ($job) {
+        $jobsByDate = $allJobs->groupBy(function ($job) {
             return $job->job_date->format('Y-m-d');
         });
 
-        $lorryByDate = $lorryJobs->groupBy(function ($job) {
-            return $job->job_date->format('Y-m-d');
-        });
-
-        // Merge all dates
-        $allDates = $jcbByDate->keys()->merge($lorryByDate->keys())->unique()->sort()->values();
-
-        $allDailySummary = $allDates->map(function ($date) use ($jcbByDate, $lorryByDate) {
-            $dayJcb = $jcbByDate->get($date, collect());
-            $dayLorry = $lorryByDate->get($date, collect());
+        $allDailySummary = $jobsByDate->keys()->sort()->values()->map(function ($date) use ($jobsByDate) {
+            $dayJobs = $jobsByDate->get($date, collect());
+            $jcbJobs = $dayJobs->where('job_type', 'jcb');
+            $lorryJobs = $dayJobs->where('job_type', 'lorry');
 
             return [
                 'date' => $date,
-                'jcb_jobs' => $dayJcb->values(),
-                'lorry_jobs' => $dayLorry->values(),
-                'jcb_total' => $dayJcb->sum('total_amount'),
-                'lorry_total' => $dayLorry->sum('total_amount'),
-                'daily_total' => $dayJcb->sum('total_amount') + $dayLorry->sum('total_amount'),
-                'jcb_count' => $dayJcb->count(),
-                'lorry_count' => $dayLorry->count(),
+                'jobs' => $dayJobs->values(),
+                'jcb_total' => $jcbJobs->sum('total_amount'),
+                'lorry_total' => $lorryJobs->sum('total_amount'),
+                'daily_total' => $dayJobs->sum('total_amount'),
+                'jcb_count' => $jcbJobs->count(),
+                'lorry_count' => $lorryJobs->count(),
             ];
         });
 
-        // Paginate dates
         $page = $request->input('page', 1);
         $perPage = 15;
         $total = $allDailySummary->count();
@@ -304,18 +242,15 @@ class ReportController extends Controller
                 'total' => $total,
             ],
             'grand_total' => [
-                'total_jcb' => $jcbJobs->sum('total_amount'),
-                'total_lorry' => $lorryJobs->sum('total_amount'),
-                'total' => $jcbJobs->sum('total_amount') + $lorryJobs->sum('total_amount'),
-                'total_jcb_count' => $jcbJobs->count(),
-                'total_lorry_count' => $lorryJobs->count(),
+                'total_jcb' => $allJobs->where('job_type', 'jcb')->sum('total_amount'),
+                'total_lorry' => $allJobs->where('job_type', 'lorry')->sum('total_amount'),
+                'total' => $allJobs->sum('total_amount'),
+                'total_jcb_count' => $allJobs->where('job_type', 'jcb')->count(),
+                'total_lorry_count' => $allJobs->where('job_type', 'lorry')->count(),
             ],
         ]);
     }
 
-    /**
-     * Export Client Statement as PDF or Excel
-     */
     public function exportClientStatement(Request $request)
     {
         $request->validate([
@@ -330,17 +265,14 @@ class ReportController extends Controller
         $dateTo = $request->input('date_to');
         $client = Client::findOrFail($clientId);
 
-        $jcbJobs = JcbJob::with(['vehicle', 'worker'])
+        $allJobs = Job::with(['vehicle', 'worker'])
             ->where('client_id', $clientId)
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
             ->get();
 
-        $lorryJobs = LorryJob::with(['vehicle', 'worker'])
-            ->where('client_id', $clientId)
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->get();
+        $jcbJobs = $allJobs->where('job_type', 'jcb')->values();
+        $lorryJobs = $allJobs->where('job_type', 'lorry')->values();
 
         $payments = Payment::where('client_id', $clientId)
             ->whereBetween('payment_date', [$dateFrom, $dateTo])
@@ -363,9 +295,6 @@ class ReportController extends Controller
         return Excel::download(new ClientStatementExport($data), "client-statement-{$client->name}-{$dateFrom}-to-{$dateTo}.xlsx");
     }
 
-    /**
-     * Export Vehicle Report as PDF or Excel
-     */
     public function exportVehicleReport(Request $request)
     {
         $request->validate([
@@ -380,17 +309,14 @@ class ReportController extends Controller
         $dateTo = $request->input('date_to');
         $vehicle = \App\Models\Vehicle::findOrFail($vehicleId);
 
-        $jcbJobs = JcbJob::with(['client', 'worker'])
+        $allJobs = Job::with(['client', 'worker'])
             ->where('vehicle_id', $vehicleId)
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
             ->get();
 
-        $lorryJobs = LorryJob::with(['client', 'worker'])
-            ->where('vehicle_id', $vehicleId)
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->get();
+        $jcbJobs = $allJobs->where('job_type', 'jcb')->values();
+        $lorryJobs = $allJobs->where('job_type', 'lorry')->values();
 
         $expenses = VehicleExpense::where('vehicle_id', $vehicleId)
             ->whereBetween('expense_date', [$dateFrom, $dateTo])
@@ -398,7 +324,7 @@ class ReportController extends Controller
             ->get();
 
         $expensesByCategory = $expenses->groupBy('category')->map(fn($g) => $g->sum('amount'));
-        $totalRevenue = $jcbJobs->sum('total_amount') + $lorryJobs->sum('total_amount');
+        $totalRevenue = $allJobs->sum('total_amount');
         $totalExpenses = $expenses->sum('amount');
         $netIncome = $totalRevenue - $totalExpenses;
 
@@ -412,9 +338,6 @@ class ReportController extends Controller
         return Excel::download(new VehicleReportExport($data), "vehicle-report-{$vehicle->name}-{$dateFrom}-to-{$dateTo}.xlsx");
     }
 
-    /**
-     * Export Daily Job Summary as PDF or Excel
-     */
     public function exportDailyJobSummary(Request $request)
     {
         $request->validate([
@@ -426,39 +349,30 @@ class ReportController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        $jcbJobs = JcbJob::with(['vehicle', 'client', 'worker'])
+        $allJobs = Job::with(['vehicle', 'client', 'worker'])
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
             ->get();
 
-        $lorryJobs = LorryJob::with(['vehicle', 'client', 'worker'])
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->get();
+        $jobsByDate = $allJobs->groupBy(fn($job) => $job->job_date->format('Y-m-d'));
 
-        $jcbByDate = $jcbJobs->groupBy(fn($job) => $job->job_date->format('Y-m-d'));
-        $lorryByDate = $lorryJobs->groupBy(fn($job) => $job->job_date->format('Y-m-d'));
-        $allDates = $jcbByDate->keys()->merge($lorryByDate->keys())->unique()->sort()->values();
-
-        $dailySummary = $allDates->map(function ($date) use ($jcbByDate, $lorryByDate) {
-            $dayJcb = $jcbByDate->get($date, collect());
-            $dayLorry = $lorryByDate->get($date, collect());
+        $dailySummary = $jobsByDate->keys()->sort()->values()->map(function ($date) use ($jobsByDate) {
+            $dayJobs = $jobsByDate->get($date, collect());
             return [
                 'date' => $date,
-                'jcb_jobs' => $dayJcb->values(),
-                'lorry_jobs' => $dayLorry->values(),
-                'jcb_total' => $dayJcb->sum('total_amount'),
-                'lorry_total' => $dayLorry->sum('total_amount'),
-                'daily_total' => $dayJcb->sum('total_amount') + $dayLorry->sum('total_amount'),
-                'jcb_count' => $dayJcb->count(),
-                'lorry_count' => $dayLorry->count(),
+                'jobs' => $dayJobs->values(),
+                'jcb_total' => $dayJobs->where('job_type', 'jcb')->sum('total_amount'),
+                'lorry_total' => $dayJobs->where('job_type', 'lorry')->sum('total_amount'),
+                'daily_total' => $dayJobs->sum('total_amount'),
+                'jcb_count' => $dayJobs->where('job_type', 'jcb')->count(),
+                'lorry_count' => $dayJobs->where('job_type', 'lorry')->count(),
             ];
         });
 
         $grandTotal = [
-            'total_jcb' => $jcbJobs->sum('total_amount'),
-            'total_lorry' => $lorryJobs->sum('total_amount'),
-            'total' => $jcbJobs->sum('total_amount') + $lorryJobs->sum('total_amount'),
+            'total_jcb' => $allJobs->where('job_type', 'jcb')->sum('total_amount'),
+            'total_lorry' => $allJobs->where('job_type', 'lorry')->sum('total_amount'),
+            'total' => $allJobs->sum('total_amount'),
         ];
 
         $data = compact('dailySummary', 'grandTotal', 'dateFrom', 'dateTo');
@@ -471,9 +385,6 @@ class ReportController extends Controller
         return Excel::download(new DailyJobSummaryExport($data), "daily-job-summary-{$dateFrom}-to-{$dateTo}.xlsx");
     }
 
-    /**
-     * Export Monthly Revenue & Expense as PDF or Excel
-     */
     public function exportMonthlyRevenueExpense(Request $request)
     {
         $request->validate([
@@ -485,8 +396,9 @@ class ReportController extends Controller
         $month = $request->input('month');
         $year = $request->input('year');
 
-        $jcbJobs = JcbJob::whereMonth('job_date', $month)->whereYear('job_date', $year)->get();
-        $lorryJobs = LorryJob::whereMonth('job_date', $month)->whereYear('job_date', $year)->get();
+        $jobs = Job::whereMonth('job_date', $month)->whereYear('job_date', $year)->get();
+        $jcbJobs = $jobs->where('job_type', 'jcb');
+        $lorryJobs = $jobs->where('job_type', 'lorry');
 
         $jcbRevenue = $jcbJobs->sum('total_amount');
         $lorryRevenue = $lorryJobs->sum('total_amount');
@@ -516,29 +428,13 @@ class ReportController extends Controller
         return Excel::download(new MonthlyRevenueExpenseExport($data), "monthly-revenue-expense-{$monthName}-{$year}.xlsx");
     }
 
-    /**
-     * Single JCB Job Invoice data
-     */
-    public function jcbJobInvoice(string $id): JsonResponse
+    public function jobInvoice(string $id): JsonResponse
     {
-        $job = JcbJob::with(['vehicle', 'client', 'worker'])->findOrFail($id);
+        $job = Job::with(['vehicle', 'client', 'worker'])->findOrFail($id);
 
         return response()->json($job);
     }
 
-    /**
-     * Single Lorry Job Invoice data
-     */
-    public function lorryJobInvoice(string $id): JsonResponse
-    {
-        $job = LorryJob::with(['vehicle', 'client', 'worker'])->findOrFail($id);
-
-        return response()->json($job);
-    }
-
-    /**
-     * Combined client invoice for multiple jobs in date range
-     */
     public function clientCombinedInvoice(Request $request): JsonResponse
     {
         $request->validate([
@@ -551,13 +447,7 @@ class ReportController extends Controller
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        $jcbJobs = JcbJob::with(['vehicle', 'worker'])
-            ->where('client_id', $clientId)
-            ->whereBetween('job_date', [$dateFrom, $dateTo])
-            ->orderBy('job_date')
-            ->get();
-
-        $lorryJobs = LorryJob::with(['vehicle', 'worker'])
+        $jobs = Job::with(['vehicle', 'worker'])
             ->where('client_id', $clientId)
             ->whereBetween('job_date', [$dateFrom, $dateTo])
             ->orderBy('job_date')
@@ -565,22 +455,18 @@ class ReportController extends Controller
 
         $client = Client::findOrFail($clientId);
 
-        $totalJcb = $jcbJobs->sum('total_amount');
-        $totalLorry = $lorryJobs->sum('total_amount');
+        $totalJcb = $jobs->where('job_type', 'jcb')->sum('total_amount');
+        $totalLorry = $jobs->where('job_type', 'lorry')->sum('total_amount');
 
         return response()->json([
             'client' => $client,
-            'jcb_jobs' => $jcbJobs,
-            'lorry_jobs' => $lorryJobs,
+            'jobs' => $jobs,
             'total_jcb' => $totalJcb,
             'total_lorry' => $totalLorry,
             'grand_total' => $totalJcb + $totalLorry,
         ]);
     }
 
-    /**
-     * Individual worker payslip for a period
-     */
     public function workerPayslip(Request $request, string $id): JsonResponse
     {
         $request->validate([
@@ -603,7 +489,6 @@ class ReportController extends Controller
         $absentDays = $attendance->where('status', 'absent')->count();
         $workedDays = $presentDays + ($halfDays * 0.5);
 
-        // Calculate salary
         if ($worker->salary_type === 'daily') {
             $calculatedSalary = $workedDays * $worker->daily_rate;
         } else {
@@ -637,9 +522,6 @@ class ReportController extends Controller
         ]);
     }
 
-    /**
-     * Monthly paysheet: all workers summary for a month
-     */
     public function monthlyPaysheet(Request $request): JsonResponse
     {
         $request->validate([

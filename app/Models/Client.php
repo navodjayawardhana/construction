@@ -29,14 +29,9 @@ class Client extends Model
         'is_active' => 'boolean',
     ];
 
-    public function jcbJobs(): HasMany
+    public function jobs(): HasMany
     {
-        return $this->hasMany(JcbJob::class);
-    }
-
-    public function lorryJobs(): HasMany
-    {
-        return $this->hasMany(LorryJob::class);
+        return $this->hasMany(Job::class);
     }
 
     public function payments(): HasMany
