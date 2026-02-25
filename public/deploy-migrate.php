@@ -38,6 +38,13 @@ header('Content-Type: application/json');
 try {
     // Run migrations
     $exitCode = Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+
+// Run production seeders
+    Illuminate\Support\Facades\Artisan::call('db:seed', [
+        '--class' => 'Database\\Seeders\\ProductionSeeder',
+        '--force' => true
+    ]);
+
     $output = Illuminate\Support\Facades\Artisan::output();
 
     // Create storage symlink
