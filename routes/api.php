@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\WorkerController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\VehicleExpenseController;
+use App\Http\Controllers\Api\ExpenseCategoryController;
 use App\Http\Controllers\Api\WorkerAttendanceController;
 use App\Http\Controllers\Api\SalaryPaymentController;
 use App\Http\Controllers\Api\ReportController;
@@ -42,6 +43,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/jobs/{id}/complete', [JobController::class, 'markCompleted']);
     Route::patch('/jobs/{id}/paid', [JobController::class, 'markPaid']);
     Route::apiResource('jobs', JobController::class);
+
+    // Expense Categories
+    Route::apiResource('expense-categories', ExpenseCategoryController::class)->except(['show']);
 
     // Vehicle Expenses
     Route::get('vehicle-expenses/vehicle-summary', [VehicleExpenseController::class, 'vehicleSummary']);

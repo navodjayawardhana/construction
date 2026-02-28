@@ -8,20 +8,10 @@ import { IRootState } from '../../store';
 import { VehicleExpense, Vehicle, PaginatedResponse } from '../../types';
 import { getExpenses, deleteExpense, getExpenseSummary, ExpenseSummaryItem } from '../../services/vehicleExpenseService';
 import { getVehicle } from '../../services/vehicleService';
+import { getExpenseCategories, ExpenseCategory } from '../../services/expenseCategoryService';
 import DataTable from '../../components/shared/DataTable';
 import PageHeader from '../../components/shared/PageHeader';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
-
-const CATEGORIES = ['fuel', 'repair', 'maintenance', 'insurance', 'tire', 'other'];
-
-const CATEGORY_COLORS: Record<string, string> = {
-    fuel: '#f59e0b',
-    repair: '#ef4444',
-    maintenance: '#3b82f6',
-    insurance: '#8b5cf6',
-    tire: '#10b981',
-    other: '#6b7280',
-};
 
 const VehicleExpenses = () => {
     const { vehicleId } = useParams<{ vehicleId: string }>();
@@ -30,18 +20,31 @@ const VehicleExpenses = () => {
     const [vehicle, setVehicle] = useState<Vehicle | null>(null);
     const [expenses, setExpenses] = useState<VehicleExpense[]>([]);
     const [summary, setSummary] = useState<ExpenseSummaryItem[]>([]);
+    const [categories, setCategories] = useState<ExpenseCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState<string>('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
 
     useEffect(() => {
         if (vehicleId) {
             fetchVehicle(vehicleId);
         }
+        fetchCategories();
     }, [vehicleId]);
+
+    const fetchCategories = async () => {
+        try {
+            const response = await getExpenseCategories();
+            setCategories(response.data);
+        } catch {
+            // silent
+        }
+    };
 
     const fetchVehicle = async (id: string) => {
         try {
@@ -59,6 +62,8 @@ const VehicleExpenses = () => {
         try {
             const params: any = { page, search: searchTerm || undefined, vehicle_id: vehicleId };
             if (category) params.category = category;
+            if (dateFrom) params.date_from = dateFrom;
+            if (dateTo) params.date_to = dateTo;
             const response = await getExpenses(params);
             const paginated: PaginatedResponse<VehicleExpense> = response.data as any;
             setExpenses(paginated.data);
@@ -70,19 +75,21 @@ const VehicleExpenses = () => {
         } finally {
             setLoading(false);
         }
-    }, [vehicleId, category]);
+    }, [vehicleId, category, dateFrom, dateTo]);
 
     const fetchSummary = useCallback(async () => {
         if (!vehicleId) return;
         try {
             const params: any = { vehicle_id: vehicleId };
             if (category) params.category = category;
+            if (dateFrom) params.date_from = dateFrom;
+            if (dateTo) params.date_to = dateTo;
             const response = await getExpenseSummary(params);
             setSummary(response.data);
         } catch {
             // silent
         }
-    }, [vehicleId, category]);
+    }, [vehicleId, category, dateFrom, dateTo]);
 
     useEffect(() => {
         fetchExpenses(currentPage, search);
@@ -94,7 +101,7 @@ const VehicleExpenses = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [category]);
+    }, [category, dateFrom, dateTo]);
 
     const handlePageChange = (page: number) => setCurrentPage(page);
     const handleSearch = (value: string) => { setSearch(value); setCurrentPage(1); };
@@ -193,7 +200,10 @@ const VehicleExpenses = () => {
                         options={{
                             chart: { fontFamily: 'Nunito, sans-serif' },
                             labels: summary.map((s) => capitalize(s.category)),
-                            colors: summary.map((s) => CATEGORY_COLORS[s.category] || '#6b7280'),
+                            colors: summary.map((s) => {
+                                const cat = categories.find((c) => c.name.toLowerCase() === s.category.toLowerCase());
+                                return cat?.color || '#6b7280';
+                            }),
                             legend: {
                                 position: 'bottom',
                                 labels: { colors: isDark ? '#e0e6ed' : undefined },
@@ -238,12 +248,38 @@ const VehicleExpenses = () => {
                             onChange={(e) => setCategory(e.target.value)}
                         >
                             <option value="">All Categories</option>
-                            {CATEGORIES.map((cat) => (
-                                <option key={cat} value={cat}>
-                                    {capitalize(cat)}
+                            {categories.map((cat) => (
+                                <option key={cat.id} value={cat.name}>
+                                    {cat.name}
                                 </option>
                             ))}
                         </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="date"
+                            className="form-input w-auto"
+                            value={dateFrom}
+                            onChange={(e) => setDateFrom(e.target.value)}
+                            placeholder="From"
+                        />
+                        <span className="text-gray-500">to</span>
+                        <input
+                            type="date"
+                            className="form-input w-auto"
+                            value={dateTo}
+                            onChange={(e) => setDateTo(e.target.value)}
+                            placeholder="To"
+                        />
+                        {(dateFrom || dateTo) && (
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                            >
+                                Clear
+                            </button>
+                        )}
                     </div>
                 </div>
 

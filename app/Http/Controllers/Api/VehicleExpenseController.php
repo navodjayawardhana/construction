@@ -22,6 +22,14 @@ class VehicleExpenseController extends Controller
             $query->where('category', $category);
         }
 
+        if ($dateFrom = $request->input('date_from')) {
+            $query->where('expense_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo = $request->input('date_to')) {
+            $query->where('expense_date', '<=', $dateTo);
+        }
+
         $expenses = $query->latest('expense_date')->paginate(15);
 
         return response()->json($expenses);
@@ -95,6 +103,14 @@ class VehicleExpenseController extends Controller
 
         if ($category = $request->input('category')) {
             $query->where('category', $category);
+        }
+
+        if ($dateFrom = $request->input('date_from')) {
+            $query->where('expense_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo = $request->input('date_to')) {
+            $query->where('expense_date', '<=', $dateTo);
         }
 
         $summary = $query->select('category', DB::raw('SUM(amount) as total'))

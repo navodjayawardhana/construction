@@ -17,6 +17,8 @@ export interface MonthlyVehicleBillPayload {
     year: number;
     overtime_kms?: number;
     rate?: number;
+    per_day_km?: number;
+    overtime_rate?: number;
     notes?: string;
     items: {
         item_date: string;

@@ -23,7 +23,7 @@ interface FormData {
     start_meter: string;
     end_meter: string;
     total_hours: string;
-    // Lorry-specific
+    // Tipper-specific
     trips: string;
     distance_km: string;
     days: string;
@@ -279,12 +279,12 @@ const JobForm = () => {
                 payload.start_meter = formData.start_meter ? parseFloat(formData.start_meter) : null;
                 payload.end_meter = formData.end_meter ? parseFloat(formData.end_meter) : null;
                 payload.total_hours = parseFloat(formData.total_hours);
-                // Clear lorry fields
+                // Clear tipper fields
                 payload.trips = null;
                 payload.distance_km = null;
                 payload.days = null;
             } else {
-                // Lorry
+                // Tipper
                 payload.start_meter = null;
                 payload.end_meter = null;
                 payload.total_hours = null;
@@ -354,7 +354,7 @@ const JobForm = () => {
                                     <input
                                         type="text"
                                         className="form-input bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
-                                        value={formData.job_type === 'jcb' ? 'JCB' : 'Lorry'}
+                                        value={formData.job_type === 'jcb' ? 'JCB' : 'Tipper'}
                                         readOnly
                                     />
                                     <input type="hidden" name="job_type" value={formData.job_type} />
@@ -368,7 +368,7 @@ const JobForm = () => {
                                     onChange={handleJobTypeChange}
                                 >
                                     <option value="jcb">JCB</option>
-                                    <option value="lorry">Lorry</option>
+                                    <option value="lorry">Tipper</option>
                                 </select>
                             )}
                             {errors.job_type && <p className="text-danger text-xs mt-1">{errors.job_type}</p>}
@@ -562,7 +562,7 @@ const JobForm = () => {
                             </div>
                         )}
 
-                        {/* Lorry-specific: Number of Trips */}
+                        {/* Tipper-specific: Number of Trips */}
                         {formData.job_type === 'lorry' && formData.rate_type === 'per_trip' && (
                             <div>
                                 <label htmlFor="trips" className="block text-sm font-semibold mb-2">
@@ -583,7 +583,7 @@ const JobForm = () => {
                             </div>
                         )}
 
-                        {/* Lorry-specific: Distance (km) */}
+                        {/* Tipper-specific: Distance (km) */}
                         {formData.job_type === 'lorry' && formData.rate_type === 'per_km' && (
                             <div>
                                 <label htmlFor="distance_km" className="block text-sm font-semibold mb-2">
@@ -604,7 +604,7 @@ const JobForm = () => {
                             </div>
                         )}
 
-                        {/* Lorry-specific: Number of Days */}
+                        {/* Tipper-specific: Number of Days */}
                         {formData.job_type === 'lorry' && formData.rate_type === 'per_day' && (
                             <div>
                                 <label htmlFor="days" className="block text-sm font-semibold mb-2">

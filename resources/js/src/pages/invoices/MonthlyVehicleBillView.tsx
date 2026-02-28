@@ -57,6 +57,15 @@ const MonthlyVehicleBillView = () => {
     const billRate = Number(bill.rate);
     const overtimeKms = Number(bill.overtime_kms);
     const overtimeAmount = Number(bill.overtime_amount);
+    const isLorry = vehicle?.type === 'lorry';
+    const perDayKm = Number(bill.per_day_km);
+    const overtimeRatePerKm = Number(bill.overtime_rate);
+
+    // Lorry-specific calculations
+    const days = items.length;
+    const baseAmount = days * billRate;
+    const totalKm = items.reduce((sum, item) => sum + Number(item.total_hours), 0);
+    const allowedKm = days * perDayKm;
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
@@ -111,7 +120,15 @@ const MonthlyVehicleBillView = () => {
                 {/* Vehicle Info */}
                 <div className="mb-4 text-sm">
                     <p><span className="font-semibold">Vehicle:</span> {vehicle?.name} {vehicle?.registration_number ? `(${vehicle.registration_number})` : ''}</p>
-                    {billRate > 0 && <p><span className="font-semibold">Rate:</span> {billRate.toFixed(2)} per hour/km</p>}
+                    {billRate > 0 && (
+                        <p><span className="font-semibold">Rate:</span> {billRate.toFixed(2)} {isLorry ? 'per day' : 'per hour'}</p>
+                    )}
+                    {isLorry && perDayKm > 0 && (
+                        <p><span className="font-semibold">Per Day KM Allowance:</span> {perDayKm.toFixed(2)} km</p>
+                    )}
+                    {isLorry && overtimeRatePerKm > 0 && (
+                        <p><span className="font-semibold">Overtime Rate:</span> {overtimeRatePerKm.toFixed(2)} per km</p>
+                    )}
                 </div>
 
                 {/* Table */}
@@ -122,9 +139,9 @@ const MonthlyVehicleBillView = () => {
                             <th className="border border-gray-300 px-3 py-2 text-left text-xs">Date</th>
                             <th className="border border-gray-300 px-3 py-2 text-right text-xs">Starting Meter</th>
                             <th className="border border-gray-300 px-3 py-2 text-right text-xs">End Meter</th>
-                            <th className="border border-gray-300 px-3 py-2 text-right text-xs">Total Hours/Kms</th>
-                            <th className="border border-gray-300 px-3 py-2 text-right text-xs">Rate</th>
-                            <th className="border border-gray-300 px-3 py-2 text-right text-xs">Amount (Rs.)</th>
+                            <th className="border border-gray-300 px-3 py-2 text-right text-xs">{isLorry ? 'Total KMs' : 'Total Hours/Kms'}</th>
+                            {!isLorry && <th className="border border-gray-300 px-3 py-2 text-right text-xs">Rate</th>}
+                            {!isLorry && <th className="border border-gray-300 px-3 py-2 text-right text-xs">Amount (Rs.)</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -135,13 +152,13 @@ const MonthlyVehicleBillView = () => {
                                 <td className="border border-gray-300 px-3 py-1.5 text-xs text-right">{Number(item.start_meter).toFixed(2)}</td>
                                 <td className="border border-gray-300 px-3 py-1.5 text-xs text-right">{Number(item.end_meter).toFixed(2)}</td>
                                 <td className="border border-gray-300 px-3 py-1.5 text-xs text-right font-semibold">{Number(item.total_hours).toFixed(2)}</td>
-                                <td className="border border-gray-300 px-3 py-1.5 text-xs text-right">{billRate.toFixed(2)}</td>
-                                <td className="border border-gray-300 px-3 py-1.5 text-xs text-right font-semibold">{Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                {!isLorry && <td className="border border-gray-300 px-3 py-1.5 text-xs text-right">{billRate.toFixed(2)}</td>}
+                                {!isLorry && <td className="border border-gray-300 px-3 py-1.5 text-xs text-right font-semibold">{Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>}
                             </tr>
                         ))}
                         {items.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="border border-gray-300 px-3 py-4 text-center text-xs text-gray-500">
+                                <td colSpan={isLorry ? 5 : 7} className="border border-gray-300 px-3 py-4 text-center text-xs text-gray-500">
                                     No items in this bill
                                 </td>
                             </tr>
@@ -152,20 +169,43 @@ const MonthlyVehicleBillView = () => {
                 {/* Totals */}
                 <div className="flex justify-end mb-8">
                     <div className="w-80">
-                        <div className="flex justify-between py-2 border-t border-gray-300 text-sm">
-                            <span className="font-semibold">Total Hours/Kms:</span>
-                            <span className="font-bold">{Number(bill.total_hours_sum).toFixed(2)}</span>
-                        </div>
-                        {overtimeKms > 0 && (
-                            <div className="flex justify-between py-2 border-t border-gray-300 text-sm">
-                                <span className="font-semibold">Overtime: {overtimeKms} kms × {billRate.toFixed(2)}</span>
-                                <span className="font-bold">{formatCurrency(overtimeAmount)}</span>
-                            </div>
+                        {isLorry ? (
+                            <>
+                                <div className="flex justify-between py-2 border-t border-gray-300 text-sm">
+                                    <span className="font-semibold">Days ({days}) x Rate ({billRate.toFixed(2)}):</span>
+                                    <span className="font-bold">{formatCurrency(baseAmount)}</span>
+                                </div>
+                                <div className="flex justify-between py-2 border-t border-gray-300 text-sm">
+                                    <span className="font-semibold">Total KMs:</span>
+                                    <span className="font-bold">{totalKm.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between py-2 border-t border-gray-300 text-sm">
+                                    <span className="font-semibold">Allowed KMs ({days} x {perDayKm.toFixed(0)}):</span>
+                                    <span className="font-bold">{allowedKm.toFixed(2)}</span>
+                                </div>
+                                {overtimeKms > 0 && (
+                                    <div className="flex justify-between py-2 border-t border-gray-300 text-sm">
+                                        <span className="font-semibold">Overtime: {overtimeKms.toFixed(2)} km x {overtimeRatePerKm.toFixed(2)}</span>
+                                        <span className="font-bold">{formatCurrency(overtimeAmount)}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between py-3 border-t-2 border-gray-800 text-lg font-bold">
+                                    <span>Total Amount:</span>
+                                    <span>{formatCurrency(bill.total_amount)}</span>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex justify-between py-2 border-t border-gray-300 text-sm">
+                                    <span className="font-semibold">Total Hours/Kms:</span>
+                                    <span className="font-bold">{Number(bill.total_hours_sum).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between py-3 border-t-2 border-gray-800 text-lg font-bold">
+                                    <span>Total Amount:</span>
+                                    <span>{formatCurrency(bill.total_amount)}</span>
+                                </div>
+                            </>
                         )}
-                        <div className="flex justify-between py-3 border-t-2 border-gray-800 text-lg font-bold">
-                            <span>Total Amount:</span>
-                            <span>{formatCurrency(bill.total_amount)}</span>
-                        </div>
                     </div>
                 </div>
 

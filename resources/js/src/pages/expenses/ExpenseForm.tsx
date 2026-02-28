@@ -4,17 +4,9 @@ import toast from 'react-hot-toast';
 import { VehicleExpense, Vehicle } from '../../types';
 import { getExpense, createExpense, updateExpense } from '../../services/vehicleExpenseService';
 import { getVehicles } from '../../services/vehicleService';
+import { getExpenseCategories, ExpenseCategory } from '../../services/expenseCategoryService';
 import PageHeader from '../../components/shared/PageHeader';
 import LoadingSpinner from '../../components/shared/LoadingSpinner';
-
-const CATEGORIES = [
-    { value: 'fuel', label: 'Fuel' },
-    { value: 'repair', label: 'Repair' },
-    { value: 'maintenance', label: 'Maintenance' },
-    { value: 'insurance', label: 'Insurance' },
-    { value: 'tire', label: 'Tire' },
-    { value: 'other', label: 'Other' },
-];
 
 const ExpenseForm = () => {
     const navigate = useNavigate();
@@ -24,6 +16,7 @@ const ExpenseForm = () => {
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+    const [categories, setCategories] = useState<ExpenseCategory[]>([]);
     const [dateMode, setDateMode] = useState<'single' | 'range'>('single');
     const [formData, setFormData] = useState({
         vehicle_id: '',
@@ -37,6 +30,7 @@ const ExpenseForm = () => {
 
     useEffect(() => {
         fetchVehicles();
+        fetchCategories();
         if (isEdit && id) {
             fetchExpense(id);
         }
@@ -48,6 +42,15 @@ const ExpenseForm = () => {
             setVehicles(response.data.data as any);
         } catch (error) {
             toast.error('Failed to fetch vehicles');
+        }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const response = await getExpenseCategories();
+            setCategories(response.data);
+        } catch (error) {
+            toast.error('Failed to fetch categories');
         }
     };
 
@@ -166,9 +169,9 @@ const ExpenseForm = () => {
                                 required
                             >
                                 <option value="">Select Category</option>
-                                {CATEGORIES.map((cat) => (
-                                    <option key={cat.value} value={cat.value}>
-                                        {cat.label}
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.name}>
+                                        {cat.name}
                                     </option>
                                 ))}
                             </select>

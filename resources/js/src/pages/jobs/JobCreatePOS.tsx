@@ -290,7 +290,7 @@ const JobCreatePOS = () => {
             const lorryCount = addedJobs.filter(j => j.job_type === 'lorry').length;
             const parts: string[] = [];
             if (jcbCount > 0) parts.push(`${jcbCount} JCB`);
-            if (lorryCount > 0) parts.push(`${lorryCount} Lorry`);
+            if (lorryCount > 0) parts.push(`${lorryCount} Tipper`);
             toast.success(`${parts.join(' + ')} job(s) created!`);
             navigate('/jobs');
         } catch (err: any) {
@@ -435,7 +435,7 @@ const JobCreatePOS = () => {
                             }`}
                             onClick={() => setVehicleFilter(f)}
                         >
-                            {f === 'all' ? 'All' : f.toUpperCase()}
+                            {f === 'all' ? 'All' : f === 'lorry' ? 'Tipper' : f.toUpperCase()}
                             <span className="ml-1 text-xs opacity-75">
                                 ({f === 'all' ? jcbVehicles.length + lorryVehicles.length : f === 'jcb' ? jcbVehicles.length : lorryVehicles.length})
                             </span>
@@ -661,7 +661,7 @@ const JobCreatePOS = () => {
                             <span className="text-sm text-gray-500 dark:text-gray-400">{addedJobs.length} job(s)</span>
                             {addedJobs.filter(j => j.job_type === 'jcb').length > 0 && addedJobs.filter(j => j.job_type === 'lorry').length > 0 && (
                                 <span className="text-xs text-gray-400 ml-1">
-                                    ({addedJobs.filter(j => j.job_type === 'jcb').length} JCB + {addedJobs.filter(j => j.job_type === 'lorry').length} Lorry)
+                                    ({addedJobs.filter(j => j.job_type === 'jcb').length} JCB + {addedJobs.filter(j => j.job_type === 'lorry').length} Tipper)
                                 </span>
                             )}
                         </div>

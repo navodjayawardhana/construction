@@ -119,10 +119,7 @@ const VehicleForm = () => {
 
     const vehicleTypes = [
         { value: 'jcb', label: 'JCB' },
-        { value: 'lorry', label: 'Lorry' },
-        { value: 'excavator', label: 'Excavator' },
-        { value: 'roller', label: 'Roller' },
-        { value: 'other', label: 'Other' },
+        { value: 'lorry', label: 'Tipper' },
     ];
 
     const statusOptions = [

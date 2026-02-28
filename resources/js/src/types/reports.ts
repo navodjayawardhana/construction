@@ -27,6 +27,8 @@ export interface MonthlyRevenueExpenseData {
         lorry_total: number;
         lorry_count: number;
         lorry_by_type: Record<string, number>;
+        monthly_bill_total: number;
+        monthly_bill_count: number;
         total: number;
     };
     expenses: {

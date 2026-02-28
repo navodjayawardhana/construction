@@ -213,7 +213,7 @@ const Sidebar = () => {
                                 </button>
                                 <AnimateHeight duration={300} height={currentMenu === 'reports' ? 'auto' : 0}>
                                     <ul className="sub-menu text-gray-500">
-                                        <li><NavLink to="/reports/client-statement">Client Statement</NavLink></li>
+                                        {/*<li><NavLink to="/reports/client-statement">Client Statement</NavLink></li>*/}
                                         <li><NavLink to="/reports/monthly-revenue-expense">Monthly Revenue</NavLink></li>
                                         <li><NavLink to="/reports/vehicle">Vehicle Report</NavLink></li>
                                         <li><NavLink to="/reports/daily-job-summary">Daily Summary</NavLink></li>
@@ -235,8 +235,8 @@ const Sidebar = () => {
                             </li>
 
                             {/* Expenses */}
-                            <li className="nav-item">
-                                <NavLink to="/expenses" className="group">
+                            <li className="menu nav-item">
+                                <button type="button" className={`${currentMenu === 'expenses' ? 'active' : ''} nav-link group w-full`} onClick={() => toggleMenu('expenses')}>
                                     <div className="flex items-center">
                                         <svg className="group-hover:!text-construction shrink-0" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                             <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke="currentColor" strokeWidth="1.5" />
@@ -244,7 +244,18 @@ const Sidebar = () => {
                                         </svg>
                                         <span className="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">Expenses</span>
                                     </div>
-                                </NavLink>
+                                    <div className={currentMenu !== 'expenses' ? 'rtl:rotate-90 -rotate-90' : ''}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M19 9L12 15L5 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                </button>
+                                <AnimateHeight duration={300} height={currentMenu === 'expenses' ? 'auto' : 0}>
+                                    <ul className="sub-menu text-gray-500">
+                                        <li><NavLink to="/expenses">All Expenses</NavLink></li>
+                                        <li><NavLink to="/expense-categories">Expense Categories</NavLink></li>
+                                    </ul>
+                                </AnimateHeight>
                             </li>
 
                             <h2 className="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">

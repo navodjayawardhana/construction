@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Job;
+use App\Models\MonthlyVehicleBill;
 use App\Models\Vehicle;
 use App\Models\VehicleExpense;
 use App\Models\Worker;
@@ -15,7 +16,9 @@ class DashboardController extends Controller
 {
     public function index(): JsonResponse
     {
-        $totalRevenue = Job::whereIn('status', ['completed', 'paid'])->sum('total_amount');
+        $jobRevenue = Job::whereIn('status', ['completed', 'paid'])->sum('total_amount');
+        $monthlyBillRevenue = MonthlyVehicleBill::sum('total_amount');
+        $totalRevenue = $jobRevenue + $monthlyBillRevenue;
         $totalExpenses = VehicleExpense::sum('amount');
 
         $activeVehicles = Vehicle::where('status', 'active')->count();
@@ -25,7 +28,7 @@ class DashboardController extends Controller
 
         $sixMonthsAgo = Carbon::now()->subMonths(5)->startOfMonth();
 
-        $monthlyRevenueData = Job::whereIn('status', ['completed', 'paid'])
+        $monthlyJobRevenue = Job::whereIn('status', ['completed', 'paid'])
             ->where('job_date', '>=', $sixMonthsAgo)
             ->select(
                 DB::raw("DATE_FORMAT(job_date, '%Y-%m') as month"),
@@ -33,6 +36,17 @@ class DashboardController extends Controller
             )
             ->groupBy('month')
             ->pluck('total', 'month');
+
+        $monthlyBillRevenueData = MonthlyVehicleBill::whereRaw(
+                "(year * 100 + month) >= ?", [$sixMonthsAgo->year * 100 + $sixMonthsAgo->month]
+            )
+            ->select(
+                'year', 'month',
+                DB::raw("CONCAT(year, '-', LPAD(month, 2, '0')) as bill_month"),
+                DB::raw('SUM(total_amount) as total')
+            )
+            ->groupBy('year', 'month')
+            ->pluck('total', 'bill_month');
 
         $monthlyExpenses = VehicleExpense::where('expense_date', '>=', $sixMonthsAgo)
             ->select(
@@ -46,9 +60,11 @@ class DashboardController extends Controller
         $monthlyExpensesData = [];
         for ($i = 5; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i)->format('Y-m');
+            $jobTotal = (float) ($monthlyJobRevenue[$month] ?? 0);
+            $billTotal = (float) ($monthlyBillRevenueData[$month] ?? 0);
             $monthlyRevenue[] = [
                 'month' => $month,
-                'total' => (float) ($monthlyRevenueData[$month] ?? 0),
+                'total' => $jobTotal + $billTotal,
             ];
             $monthlyExpensesData[] = [
                 'month' => $month,

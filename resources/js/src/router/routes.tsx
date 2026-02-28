@@ -34,6 +34,7 @@ const SalaryPaymentList = lazy(() => import('../pages/workers/SalaryPaymentList'
 const ExpenseList = lazy(() => import('../pages/expenses/ExpenseList'));
 const VehicleExpenses = lazy(() => import('../pages/expenses/VehicleExpenses'));
 const ExpenseForm = lazy(() => import('../pages/expenses/ExpenseForm'));
+const ExpenseCategoryList = lazy(() => import('../pages/expenses/ExpenseCategoryList'));
 
 // Reports
 const ReportIndex = lazy(() => import('../pages/reports/ReportIndex'));
@@ -187,6 +188,11 @@ const routes = [
     {
         path: '/expenses/:id/edit',
         element: <ExpenseForm />,
+        layout: 'default',
+    },
+    {
+        path: '/expense-categories',
+        element: <ExpenseCategoryList />,
         layout: 'default',
     },
     // Reports

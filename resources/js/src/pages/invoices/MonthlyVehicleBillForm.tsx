@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Vehicle, Client } from '../../types';
@@ -13,8 +13,8 @@ import { getClients } from '../../services/clientService';
 interface ItemRow {
     key: number;
     item_date: string;
-    start_meter: number;
-    end_meter: number;
+    start_meter: number | '';
+    end_meter: number | '';
 }
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -34,12 +34,16 @@ const MonthlyVehicleBillForm = () => {
     const [clientId, setClientId] = useState('');
     const [month, setMonth] = useState(now.getMonth() + 1);
     const [year, setYear] = useState(now.getFullYear());
-    const [overtimeKms, setOvertimeKms] = useState(0);
-    const [rate, setRate] = useState(0);
+    const [rate, setRate] = useState<number | ''>('');
+    const [perDayKm, setPerDayKm] = useState<number | ''>('');
+    const [overtimeRate, setOvertimeRate] = useState<number | ''>('');
     const [notes, setNotes] = useState('');
     const [items, setItems] = useState<ItemRow[]>([]);
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    const selectedVehicle = useMemo(() => vehicles.find((v) => v.id === vehicleId), [vehicles, vehicleId]);
+    const isLorry = selectedVehicle?.type === 'lorry';
 
     useEffect(() => {
         fetchDropdowns();
@@ -70,8 +74,9 @@ const MonthlyVehicleBillForm = () => {
             setClientId(bill.client_id);
             setMonth(bill.month);
             setYear(bill.year);
-            setOvertimeKms(Number(bill.overtime_kms));
             setRate(Number(bill.rate));
+            setPerDayKm(Number(bill.per_day_km));
+            setOvertimeRate(Number(bill.overtime_rate));
             setNotes(bill.notes || '');
             setItems(
                 (bill.items || []).map((item) => ({
@@ -91,21 +96,23 @@ const MonthlyVehicleBillForm = () => {
 
     const addManualRow = () => {
         let nextDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        let startMeter: number | '' = '';
         if (items.length > 0) {
-            const lastDate = items[items.length - 1].item_date;
-            if (lastDate) {
-                const d = new Date(lastDate);
+            const lastItem = items[items.length - 1];
+            if (lastItem.item_date) {
+                const d = new Date(lastItem.item_date);
                 d.setDate(d.getDate() + 1);
                 nextDate = d.toISOString().split('T')[0];
             }
+            if (lastItem.end_meter !== '') startMeter = lastItem.end_meter;
         }
         setItems([
             ...items,
             {
                 key: nextKey(),
                 item_date: nextDate,
-                start_meter: 0,
-                end_meter: 0,
+                start_meter: startMeter,
+                end_meter: '',
             },
         ]);
     };
@@ -118,12 +125,23 @@ const MonthlyVehicleBillForm = () => {
         setItems(items.filter((item) => item.key !== key));
     };
 
-    const calcTotalHours = (item: ItemRow) => item.end_meter - item.start_meter;
-    const calcAmount = (item: ItemRow) => calcTotalHours(item) * rate;
-    const totalHoursSum = items.reduce((sum, item) => sum + calcTotalHours(item), 0);
+    // Calculations
+    const num = (v: number | '') => v === '' ? 0 : v;
+    const calcTotalValue = (item: ItemRow) => num(item.end_meter) - num(item.start_meter);
+    const calcAmount = (item: ItemRow) => calcTotalValue(item) * num(rate);
+    const totalValueSum = items.reduce((sum, item) => sum + calcTotalValue(item), 0);
+
+    // JCB calculations
     const itemsTotal = items.reduce((sum, item) => sum + calcAmount(item), 0);
-    const overtimeAmount = overtimeKms * rate;
-    const grandTotal = itemsTotal + overtimeAmount;
+    const jcbGrandTotal = itemsTotal;
+
+    // Lorry calculations
+    const days = items.length;
+    const baseAmount = days * num(rate);
+    const allowedKm = days * num(perDayKm);
+    const lorryOvertimeKms = Math.max(0, totalValueSum - allowedKm);
+    const lorryOvertimeAmount = lorryOvertimeKms * num(overtimeRate);
+    const lorryGrandTotal = baseAmount + lorryOvertimeAmount;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -143,13 +161,15 @@ const MonthlyVehicleBillForm = () => {
                 client_id: clientId,
                 month,
                 year,
-                overtime_kms: overtimeKms,
-                rate,
+                overtime_kms: isLorry ? lorryOvertimeKms : 0,
+                rate: num(rate),
+                per_day_km: isLorry ? num(perDayKm) : 0,
+                overtime_rate: isLorry ? num(overtimeRate) : 0,
                 notes: notes || undefined,
                 items: items.map((item) => ({
                     item_date: item.item_date,
-                    start_meter: item.start_meter,
-                    end_meter: item.end_meter,
+                    start_meter: num(item.start_meter),
+                    end_meter: num(item.end_meter),
                 })),
             };
 
@@ -219,34 +239,69 @@ const MonthlyVehicleBillForm = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Rate (per hour/km)</label>
-                            <input
-                                type="number"
-                                className="form-input"
-                                value={rate}
-                                onChange={(e) => setRate(Number(e.target.value) || 0)}
-                                min="0"
-                                step="0.01"
-                            />
+                    {isLorry ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Rate (per day) *</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={rate}
+                                    onChange={(e) => setRate(e.target.value === '' ? '' : Number(e.target.value))}
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Per Day KM *</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={perDayKm}
+                                    onChange={(e) => setPerDayKm(e.target.value === '' ? '' : Number(e.target.value))}
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Overtime Rate (per km) *</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={overtimeRate}
+                                    onChange={(e) => setOvertimeRate(e.target.value === '' ? '' : Number(e.target.value))}
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Notes</label>
+                                <input type="text" className="form-input" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Overtime Kms</label>
-                            <input
-                                type="number"
-                                className="form-input"
-                                value={overtimeKms}
-                                onChange={(e) => setOvertimeKms(Number(e.target.value) || 0)}
-                                min="0"
-                                step="0.01"
-                            />
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Rate (per hour) *</label>
+                                <input
+                                    type="number"
+                                    className="form-input"
+                                    value={rate}
+                                    onChange={(e) => setRate(e.target.value === '' ? '' : Number(e.target.value))}
+                                    min="0"
+                                    step="0.01"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Notes</label>
+                                <input type="text" className="form-input" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1">Notes</label>
-                            <input type="text" className="form-input" value={notes} onChange={(e) => setNotes(e.target.value)} />
-                        </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Items Section */}
@@ -266,15 +321,15 @@ const MonthlyVehicleBillForm = () => {
                                     <th className="px-2 py-2 text-left text-xs font-semibold">Date</th>
                                     <th className="px-2 py-2 text-right text-xs font-semibold">Start Meter</th>
                                     <th className="px-2 py-2 text-right text-xs font-semibold">End Meter</th>
-                                    <th className="px-2 py-2 text-right text-xs font-semibold">Total Hours</th>
-                                    <th className="px-2 py-2 text-right text-xs font-semibold">Amount</th>
+                                    <th className="px-2 py-2 text-right text-xs font-semibold">{isLorry ? 'Total KMs' : 'Total Hours'}</th>
+                                    {!isLorry && <th className="px-2 py-2 text-right text-xs font-semibold">Amount</th>}
                                     <th className="px-2 py-2 text-center text-xs font-semibold w-16"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {items.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-2 py-8 text-center text-gray-500 text-sm">
+                                        <td colSpan={isLorry ? 6 : 7} className="px-2 py-8 text-center text-gray-500 text-sm">
                                             Click "+ Add Row" to add items.
                                         </td>
                                     </tr>
@@ -296,9 +351,10 @@ const MonthlyVehicleBillForm = () => {
                                                     type="number"
                                                     className="form-input text-sm py-1 text-right w-28"
                                                     value={item.start_meter}
-                                                    onChange={(e) => updateItem(item.key, 'start_meter', Number(e.target.value) || 0)}
+                                                    onChange={(e) => updateItem(item.key, 'start_meter', e.target.value === '' ? '' : Number(e.target.value))}
                                                     min="0"
                                                     step="0.01"
+                                                    required
                                                 />
                                             </td>
                                             <td className="px-2 py-1">
@@ -306,17 +362,20 @@ const MonthlyVehicleBillForm = () => {
                                                     type="number"
                                                     className="form-input text-sm py-1 text-right w-28"
                                                     value={item.end_meter}
-                                                    onChange={(e) => updateItem(item.key, 'end_meter', Number(e.target.value) || 0)}
+                                                    onChange={(e) => updateItem(item.key, 'end_meter', e.target.value === '' ? '' : Number(e.target.value))}
                                                     min="0"
                                                     step="0.01"
+                                                    required
                                                 />
                                             </td>
                                             <td className="px-2 py-1 text-right text-sm font-semibold">
-                                                {calcTotalHours(item).toFixed(2)}
+                                                {calcTotalValue(item).toFixed(2)}
                                             </td>
-                                            <td className="px-2 py-1 text-right text-sm font-semibold">
-                                                {calcAmount(item).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </td>
+                                            {!isLorry && (
+                                                <td className="px-2 py-1 text-right text-sm font-semibold">
+                                                    {calcAmount(item).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                </td>
+                                            )}
                                             <td className="px-2 py-1 text-center">
                                                 <button type="button" onClick={() => removeItem(item.key)} className="text-red-500 hover:text-red-700 text-sm" title="Remove">
                                                     &times;
@@ -333,24 +392,47 @@ const MonthlyVehicleBillForm = () => {
                     {items.length > 0 && (
                         <div className="flex justify-end mt-4">
                             <div className="w-80 text-sm">
-                                <div className="flex justify-between py-1 border-t">
-                                    <span className="font-semibold">Total Hours/Kms:</span>
-                                    <span className="font-bold">{totalHoursSum.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between py-1 border-t">
-                                    <span className="font-semibold">Items Total:</span>
-                                    <span className="font-bold">Rs. {itemsTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
-                                {overtimeKms > 0 && (
-                                    <div className="flex justify-between py-1 border-t">
-                                        <span className="font-semibold">Overtime: {overtimeKms} kms × {rate}</span>
-                                        <span className="font-bold">Rs. {overtimeAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                    </div>
+                                {isLorry ? (
+                                    <>
+                                        <div className="flex justify-between py-1 border-t">
+                                            <span className="font-semibold">Days ({days}) x Rate ({num(rate).toFixed(2)}):</span>
+                                            <span className="font-bold">Rs. {baseAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1 border-t">
+                                            <span className="font-semibold">Total KMs:</span>
+                                            <span className="font-bold">{totalValueSum.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1 border-t">
+                                            <span className="font-semibold">Allowed KMs ({days} x {num(perDayKm)}):</span>
+                                            <span className="font-bold">{allowedKm.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-1 border-t">
+                                            <span className="font-semibold">Overtime KMs:</span>
+                                            <span className="font-bold">{lorryOvertimeKms.toFixed(2)}</span>
+                                        </div>
+                                        {lorryOvertimeKms > 0 && (
+                                            <div className="flex justify-between py-1 border-t">
+                                                <span className="font-semibold">Overtime: {lorryOvertimeKms.toFixed(2)} x {num(overtimeRate).toFixed(2)}</span>
+                                                <span className="font-bold">Rs. {lorryOvertimeAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex justify-between py-2 border-t-2 border-gray-800 text-base font-bold">
+                                            <span>Grand Total:</span>
+                                            <span>Rs. {lorryGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="flex justify-between py-1 border-t">
+                                            <span className="font-semibold">Total Hours/Kms:</span>
+                                            <span className="font-bold">{totalValueSum.toFixed(2)}</span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-t-2 border-gray-800 text-base font-bold">
+                                            <span>Grand Total:</span>
+                                            <span>Rs. {jcbGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </>
                                 )}
-                                <div className="flex justify-between py-2 border-t-2 border-gray-800 text-base font-bold">
-                                    <span>Grand Total:</span>
-                                    <span>Rs. {grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                </div>
                             </div>
                         </div>
                     )}

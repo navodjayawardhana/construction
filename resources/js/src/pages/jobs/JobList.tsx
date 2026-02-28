@@ -228,7 +228,7 @@ const JobList = () => {
     const jobTypeButtons: { value: JobTypeFilter; label: string; color: string }[] = [
         { value: 'all', label: 'All', color: 'btn-primary' },
         { value: 'jcb', label: 'JCB', color: 'btn-warning' },
-        { value: 'lorry', label: 'Lorry', color: 'btn-info' },
+        { value: 'lorry', label: 'Tipper', color: 'btn-info' },
     ];
 
     return (

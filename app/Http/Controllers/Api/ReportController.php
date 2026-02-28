@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Job;
+use App\Models\MonthlyVehicleBill;
 use App\Models\Payment;
 use App\Models\VehicleExpense;
 use App\Models\SalaryPayment;
@@ -95,6 +96,12 @@ class ReportController extends Controller
             return $group->sum('total_amount');
         });
 
+        // Monthly Vehicle Bills revenue
+        $monthlyBills = MonthlyVehicleBill::where('month', $month)
+            ->where('year', $year)
+            ->get();
+        $monthlyBillRevenue = $monthlyBills->sum('total_amount');
+
         $vehicleExpenses = VehicleExpense::whereMonth('expense_date', $month)
             ->whereYear('expense_date', $year)
             ->get();
@@ -111,7 +118,7 @@ class ReportController extends Controller
 
         $totalSalaryPayments = $salaryPayments->sum('amount');
 
-        $totalRevenue = $jcbRevenue + $lorryRevenue;
+        $totalRevenue = $jcbRevenue + $lorryRevenue + $monthlyBillRevenue;
         $totalExpenses = $totalVehicleExpenses + $totalSalaryPayments;
         $profitLoss = $totalRevenue - $totalExpenses;
 
@@ -122,6 +129,8 @@ class ReportController extends Controller
                 'lorry_total' => $lorryRevenue,
                 'lorry_count' => $jobs->where('job_type', 'lorry')->count(),
                 'lorry_by_type' => $lorryByType,
+                'monthly_bill_total' => $monthlyBillRevenue,
+                'monthly_bill_count' => $monthlyBills->count(),
                 'total' => $totalRevenue,
             ],
             'expenses' => [
@@ -164,7 +173,21 @@ class ReportController extends Controller
 
         $totalJcbRevenue = $allJobs->where('job_type', 'jcb')->sum('total_amount');
         $totalLorryRevenue = $allJobs->where('job_type', 'lorry')->sum('total_amount');
-        $totalRevenue = $totalJcbRevenue + $totalLorryRevenue;
+
+        // Monthly bills for this vehicle within date range
+        $startMonth = (int) date('m', strtotime($dateFrom));
+        $startYear = (int) date('Y', strtotime($dateFrom));
+        $endMonth = (int) date('m', strtotime($dateTo));
+        $endYear = (int) date('Y', strtotime($dateTo));
+
+        $monthlyBillRevenue = MonthlyVehicleBill::where('vehicle_id', $vehicleId)
+            ->where(function ($q) use ($startMonth, $startYear, $endMonth, $endYear) {
+                $q->whereRaw("(year * 100 + month) >= ?", [$startYear * 100 + $startMonth])
+                  ->whereRaw("(year * 100 + month) <= ?", [$endYear * 100 + $endMonth]);
+            })
+            ->sum('total_amount');
+
+        $totalRevenue = $totalJcbRevenue + $totalLorryRevenue + $monthlyBillRevenue;
         $totalExpenses = $allExpenses->sum('amount');
         $netIncome = $totalRevenue - $totalExpenses;
 
@@ -185,6 +208,7 @@ class ReportController extends Controller
             'summary' => [
                 'total_jcb_revenue' => $totalJcbRevenue,
                 'total_lorry_revenue' => $totalLorryRevenue,
+                'total_monthly_bill_revenue' => $monthlyBillRevenue,
                 'total_revenue' => $totalRevenue,
                 'expenses_by_category' => $expensesByCategory,
                 'total_expenses' => $totalExpenses,
@@ -404,6 +428,9 @@ class ReportController extends Controller
         $lorryRevenue = $lorryJobs->sum('total_amount');
         $lorryByType = $lorryJobs->groupBy('rate_type')->map(fn($g) => $g->sum('total_amount'));
 
+        $monthlyBills = MonthlyVehicleBill::where('month', $month)->where('year', $year)->get();
+        $monthlyBillRevenue = $monthlyBills->sum('total_amount');
+
         $vehicleExpenses = VehicleExpense::whereMonth('expense_date', $month)->whereYear('expense_date', $year)->get();
         $expensesByCategory = $vehicleExpenses->groupBy('category')->map(fn($g) => $g->sum('amount'));
         $totalVehicleExpenses = $vehicleExpenses->sum('amount');
@@ -411,14 +438,14 @@ class ReportController extends Controller
         $salaryPayments = SalaryPayment::whereMonth('payment_date', $month)->whereYear('payment_date', $year)->get();
         $totalSalaryPayments = $salaryPayments->sum('amount');
 
-        $totalRevenue = $jcbRevenue + $lorryRevenue;
+        $totalRevenue = $jcbRevenue + $lorryRevenue + $monthlyBillRevenue;
         $totalExpenses = $totalVehicleExpenses + $totalSalaryPayments;
         $profitLoss = $totalRevenue - $totalExpenses;
 
         $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         $monthName = $months[$month - 1];
 
-        $data = compact('jcbRevenue', 'lorryRevenue', 'lorryByType', 'jcbJobs', 'lorryJobs', 'expensesByCategory', 'totalVehicleExpenses', 'totalSalaryPayments', 'salaryPayments', 'totalRevenue', 'totalExpenses', 'profitLoss', 'month', 'year', 'monthName');
+        $data = compact('jcbRevenue', 'lorryRevenue', 'lorryByType', 'monthlyBillRevenue', 'jcbJobs', 'lorryJobs', 'expensesByCategory', 'totalVehicleExpenses', 'totalSalaryPayments', 'salaryPayments', 'totalRevenue', 'totalExpenses', 'profitLoss', 'month', 'year', 'monthName');
 
         if ($request->input('format') === 'pdf') {
             $pdf = Pdf::loadView('reports.monthly-revenue-expense', $data)->setPaper('a4', 'portrait');

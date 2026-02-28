@@ -25,7 +25,7 @@ export interface Vehicle {
     id: string;
     name: string;
     registration_number?: string;
-    type: 'jcb' | 'lorry' | 'excavator' | 'roller' | 'other';
+    type: 'jcb' | 'lorry';
     color?: string;
     status: 'active' | 'inactive' | 'maintenance';
     make?: string;
@@ -82,7 +82,7 @@ export interface Job {
 export interface VehicleExpense {
     id: string;
     vehicle_id: string;
-    category: 'fuel' | 'repair' | 'maintenance' | 'insurance' | 'tire' | 'other';
+    category: string;
     amount: number;
     expense_date: string;
     date_to?: string;
@@ -159,6 +159,8 @@ export interface MonthlyVehicleBill {
     year: number;
     overtime_kms: number;
     rate: number;
+    per_day_km: number;
+    overtime_rate: number;
     overtime_amount: number;
     total_hours_sum: number;
     total_amount: number;

@@ -12,7 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('registration_number')->nullable();
-            $table->enum('type', ['jcb', 'lorry', 'excavator', 'roller', 'other'])->default('jcb');
+            $table->enum('type', ['jcb', 'lorry'])->default('jcb');
             $table->string('color')->nullable();
             $table->enum('status', ['active', 'inactive', 'maintenance'])->default('active');
             $table->string('make')->nullable();

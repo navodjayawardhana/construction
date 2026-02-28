@@ -42,14 +42,7 @@ const MonthlyRevenueExpense = () => {
         return `Rs. ${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    const categoryLabels: Record<string, string> = {
-        fuel: 'Fuel',
-        repair: 'Repair',
-        maintenance: 'Maintenance',
-        insurance: 'Insurance',
-        tire: 'Tire',
-        other: 'Other',
-    };
+    const capitalize = (str: string) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 
     const rateTypeLabels: Record<string, string> = {
         per_trip: 'Per Trip',
@@ -145,6 +138,12 @@ const MonthlyRevenueExpense = () => {
                                         <span>{formatCurrency(amount)}</span>
                                     </div>
                                 ))}
+                                {(data.revenue.monthly_bill_total > 0 || data.revenue.monthly_bill_count > 0) && (
+                                    <div className="flex justify-between border-b pb-2">
+                                        <span className="text-gray-500 dark:text-gray-400">Monthly Bills ({data.revenue.monthly_bill_count})</span>
+                                        <span className="font-semibold">{formatCurrency(data.revenue.monthly_bill_total)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between pt-2 border-t-2 font-bold text-green-600 dark:text-green-400">
                                     <span>Total Revenue</span>
                                     <span>{formatCurrency(data.revenue.total)}</span>
@@ -159,7 +158,7 @@ const MonthlyRevenueExpense = () => {
                                 <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Vehicle Expenses</p>
                                 {Object.entries(data.expenses.vehicle_expenses_by_category || {}).map(([cat, amount]) => (
                                     <div key={cat} className="flex justify-between border-b pb-2 pl-4">
-                                        <span className="text-gray-500 dark:text-gray-400">{categoryLabels[cat] || cat}</span>
+                                        <span className="text-gray-500 dark:text-gray-400">{capitalize(cat)}</span>
                                         <span className="font-semibold">{formatCurrency(amount)}</span>
                                     </div>
                                 ))}
