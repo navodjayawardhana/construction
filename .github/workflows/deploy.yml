@@ -93,9 +93,9 @@ jobs:
             **/.phpunit.cache/**
 
       # ── Run Migrations via HTTP Webhook ──
-      - name: Run migrations on nau.rfrma.com
+      - name: Run migrations on samanthaconstructions.nexgensolutionsl.com
         run: |
-          response=$(curl -s -w "\n%{http_code}" "https://nau.rfrma.com/deploy-migrate.php?token=${{ secrets.DEPLOY_TOKEN }}")
+          response=$(curl -s -w "\n%{http_code}" "https://samanthaconstructions.nexgensolutionsl.com/deploy-migrate.php?token=${{ secrets.DEPLOY_TOKEN }}")
           http_code=$(echo "$response" | tail -1)
           body=$(echo "$response" | head -n -1)
           echo "$body"
