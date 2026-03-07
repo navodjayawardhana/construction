@@ -118,6 +118,7 @@ try {
     }
     $results['seed_output'] = trim(Illuminate\Support\Facades\Artisan::output());
 
+
     // Storage symlink
     Illuminate\Support\Facades\Artisan::call('storage:link', ['--force' => true]);
     $results['storage_link'] = trim(Illuminate\Support\Facades\Artisan::output());
