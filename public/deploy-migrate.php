@@ -6,7 +6,7 @@
  * Subsequent runs: migrates, seeds production, caches
  */
 
-$basePath = __DIR__;
+$basePath = dirname(__DIR__);
 $envFile = $basePath . '/.env';
 $firstRun = false;
 
